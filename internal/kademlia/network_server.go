@@ -1,5 +1,8 @@
 package kademlia
 
+type packet struct {
+}
+
 type Network struct {
 }
 
