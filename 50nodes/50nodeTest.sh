@@ -1,9 +1,9 @@
 #!/bin/bash
-set -e  # exit on error
+set -e 
 
 NETWORK_NAME=testnet
 NODE_COUNT=50
-IMAGE=busybox   # lightweight image for demo (has ping, nc, etc.)
+IMAGE=busybox   
 
 # Clean up if network exists
 if docker network inspect "$NETWORK_NAME" >/dev/null 2>&1; then
