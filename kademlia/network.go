@@ -6,11 +6,6 @@ import (
 	"strconv"
 )
 
-type Contact struct {
-	IP   string
-	Port int
-}
-
 type Network struct {
 	Conn *net.UDPConn
 }
