@@ -7,7 +7,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/antonfollinger/kademlia_go/kademlia"
+	"github.com/antonfollinger/kademlia_go/internal/kademlia"
 )
 
 func main() {
@@ -24,6 +24,10 @@ func main() {
 	}
 
 	fmt.Printf("Node listening on UDP port %d\n", port)
+
+	// Use InitKademlia to initialize the node
+	node := kademlia.InitKademlia("0.0.0.0", port)
+	node.Network = network // set the network field if needed
 
 	peer := os.Getenv("PEER")
 	if peer != "" {
