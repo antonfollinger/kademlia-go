@@ -6,11 +6,6 @@ import (
 	"strconv"
 )
 
-type Contact struct {
-	IP   string
-	Port int
-}
-
 type Network struct {
 	Conn *net.UDPConn
 }
@@ -70,7 +65,7 @@ func (network *Network) SendStoreMessage(data []byte) {
 }
 
 func (network *Network) sendMessage(contact *Contact, msg string) {
-	addr, err := net.ResolveUDPAddr("udp", contact.IP+":"+strconv.Itoa(contact.Port))
+	addr, err := net.ResolveUDPAddr("udp", contact.Address+":"+strconv.Itoa(contact.Port))
 	if err != nil {
 		fmt.Println("ResolveUDPAddr error:", err)
 		return

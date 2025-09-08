@@ -22,6 +22,7 @@ func main() {
 		fmt.Println("Failed to listen:", err)
 		return
 	}
+
 	fmt.Printf("Node listening on UDP port %d\n", port)
 
 	peer := os.Getenv("PEER")
@@ -31,10 +32,11 @@ func main() {
 		parts := strings.Split(peer, ":")
 		if len(parts) == 2 {
 			peerPort, _ := strconv.Atoi(parts[1])
-			contact := &kademlia.Contact{IP: parts[0], Port: peerPort}
+			contact := &kademlia.Contact{Address: parts[0], Port: peerPort, ID: kademlia.NewRandomKademliaID()}
+			fmt.Printf("Contact: %+v, KademliaID: %s\n", contact, contact.ID.String())
 			network.SendPingMessage(contact)
 		}
 	}
 
-	select {} // Block forever
+	select {}
 }
