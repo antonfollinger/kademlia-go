@@ -1,5 +1,9 @@
 package kademlia
 
+const (
+	alpha = 3
+)
+
 type Node struct {
 	id           *KademliaID
 	routingTable *RoutingTable
