@@ -1,47 +1,57 @@
 package kademlia
 
-import (
-	"fmt"
-)
+import "net"
 
 type Kademlia struct {
-	RoutingTable *RoutingTable
-	Network      *Network
-	Storage      map[string][]byte
+	addr        string
+	node        *Node
+	client      *Client
+	server      *Server
+	isBootstrap bool
 }
 
-func InitKademlia(ip string, port int, bootstrap bool, bootstrapID string) *Kademlia {
-	var kademliaID *KademliaID
-	var contact Contact
+func InitKademlia(bootStrap bool) (*Kademlia, error) {
+	k := &Kademlia{}
+	ip := k.getLocalIP()
 
-	if bootstrap {
-		kademliaID = NewKademliaID(bootstrapID)
-		contact = NewContact(kademliaID, ip, port)
-	} else {
-		kademliaID = NewRandomKademliaID()
-		contact = NewContact(kademliaID, ip, port)
+	k.addr = ip
+	k.isBootstrap = bootStrap
+
+	// Node
+	var nodeErr error
+	k.node, nodeErr = InitNode(bootStrap, ip)
+	if nodeErr != nil {
+		return nil, nodeErr
 	}
-	routingTable := NewRoutingTable(contact)
 
-	fmt.Printf("New node was created with: \n Address: %s\n Contact: %s\n ID: %s\n", contact.Address, contact.String(), contact.ID.String())
-
-	return &Kademlia{
-		RoutingTable: routingTable,
-		Storage:      make(map[string][]byte),
+	// Client
+	var clientErr error
+	k.client, clientErr = InitClient(ip)
+	if clientErr != nil {
+		return nil, clientErr
 	}
+
+	// Server
+	var serverErr error
+	k.server, serverErr = InitServer(ip)
+	if serverErr != nil {
+		return nil, serverErr
+	}
+
+	return k, nil
 }
 
-func (kademlia *Kademlia) SetNetworkInterface(network *Network) {
-	kademlia.Network = network
-}
-
-func (kademlia *Kademlia) LookupContact(target *Contact) []Contact {
-	return kademlia.RoutingTable.FindClosestContacts(target.ID, bucketSize)
-}
-
-func (kademlia *Kademlia) LookupData(hash string) {
-
-}
-func (kademlia *Kademlia) Store(data []byte) {
-	// TODO
+func (kademlia *Kademlia) getLocalIP() string {
+	addrs, err := net.InterfaceAddrs()
+	if err != nil {
+		return ""
+	}
+	for _, address := range addrs {
+		if ipnet, ok := address.(*net.IPNet); ok && !ipnet.IP.IsLoopback() {
+			if ipnet.IP.To4() != nil {
+				return ipnet.IP.String()
+			}
+		}
+	}
+	return ""
 }

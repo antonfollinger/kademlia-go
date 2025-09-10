@@ -9,19 +9,17 @@ import (
 func Test_contact_NewContact(t *testing.T) {
 	id := NewKademliaID("FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF")
 	address := "127.0.0.1"
-	port := 8000
-	contact := NewContact(id, address, port)
+	contact := NewContact(id, address)
 
 	assert.Equal(t, id, contact.ID)
 	assert.Equal(t, address, contact.Address)
-	assert.Equal(t, port, contact.Port)
 	assert.Nil(t, contact.distance)
 }
 
 func Test_contact_CalcDistance(t *testing.T) {
 	id1 := NewKademliaID("FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF")
 	id2 := NewKademliaID("0000000000000000000000000000000000000001")
-	contact := NewContact(id1, "127.0.0.1", 8000)
+	contact := NewContact(id1, "127.0.0.1")
 	contact.CalcDistance(id2)
 
 	assert.NotNil(t, contact.distance)
@@ -34,9 +32,9 @@ func Test_contact_Less(t *testing.T) {
 	id2 := NewKademliaID("0000000000000000000000000000000000000001")
 	id3 := NewKademliaID("0000000000000000000000000000000000000002")
 
-	contact1 := NewContact(id1, "127.0.0.1", 8000)
-	contact2 := NewContact(id2, "127.0.0.2", 8001)
-	contact3 := NewContact(id3, "127.0.0.3", 8002)
+	contact1 := NewContact(id1, "127.0.0.1")
+	contact2 := NewContact(id2, "127.0.0.2")
+	contact3 := NewContact(id3, "127.0.0.3")
 
 	target := NewKademliaID("0000000000000000000000000000000000000000")
 	contact1.CalcDistance(target)
@@ -49,7 +47,7 @@ func Test_contact_Less(t *testing.T) {
 
 func Test_contact_String(t *testing.T) {
 	id := NewKademliaID("FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF")
-	contact := NewContact(id, "127.0.0.1", 8000)
+	contact := NewContact(id, "127.0.0.1")
 	// KademliaID.string() produces lowercase hexadecimal string
 	expected := `contact("ffffffffffffffffffffffffffffffffffffffff", "127.0.0.1")`
 	assert.Equal(t, expected, contact.String())
@@ -58,8 +56,8 @@ func Test_contact_String(t *testing.T) {
 func Test_contactcandidates_AppendAndGetContacts(t *testing.T) {
 	id1 := NewKademliaID("FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF")
 	id2 := NewKademliaID("0000000000000000000000000000000000000001")
-	contact1 := NewContact(id1, "127.0.0.1", 8000)
-	contact2 := NewContact(id2, "127.0.0.2", 8001)
+	contact1 := NewContact(id1, "127.0.0.1")
+	contact2 := NewContact(id2, "127.0.0.2")
 
 	candidates := &ContactCandidates{}
 	candidates.Append([]Contact{contact1, contact2})
@@ -73,8 +71,8 @@ func Test_contactcandidates_AppendAndGetContacts(t *testing.T) {
 func Test_contactcandidates_Swap(t *testing.T) {
 	id1 := NewKademliaID("FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF")
 	id2 := NewKademliaID("0000000000000000000000000000000000000001")
-	contact1 := NewContact(id1, "127.0.0.1", 8000)
-	contact2 := NewContact(id2, "127.0.0.2", 8001)
+	contact1 := NewContact(id1, "127.0.0.1")
+	contact2 := NewContact(id2, "127.0.0.2")
 
 	candidates := &ContactCandidates{}
 	candidates.Append([]Contact{contact1, contact2})
@@ -87,8 +85,8 @@ func Test_contactcandidates_Swap(t *testing.T) {
 func Test_contactcandidates_Less(t *testing.T) {
 	id1 := NewKademliaID("FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF")
 	id2 := NewKademliaID("0000000000000000000000000000000000000001")
-	contact1 := NewContact(id1, "127.0.0.1", 8000)
-	contact2 := NewContact(id2, "127.0.0.2", 8001)
+	contact1 := NewContact(id1, "127.0.0.1")
+	contact2 := NewContact(id2, "127.0.0.2")
 
 	target := NewKademliaID("0000000000000000000000000000000000000000")
 	contact1.CalcDistance(target)
@@ -105,9 +103,9 @@ func Test_contactcandidates_Sort(t *testing.T) {
 	id1 := NewKademliaID("FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF")
 	id2 := NewKademliaID("0000000000000000000000000000000000000001")
 	id3 := NewKademliaID("0000000000000000000000000000000000000002")
-	contact1 := NewContact(id1, "127.0.0.1", 8000)
-	contact2 := NewContact(id2, "127.0.0.2", 8001)
-	contact3 := NewContact(id3, "127.0.0.3", 8002)
+	contact1 := NewContact(id1, "127.0.0.1")
+	contact2 := NewContact(id2, "127.0.0.2")
+	contact3 := NewContact(id3, "127.0.0.3")
 
 	target := NewKademliaID("0000000000000000000000000000000000000000")
 	contact1.CalcDistance(target)
