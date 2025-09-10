@@ -10,6 +10,21 @@ type Network struct {
 	Conn *net.UDPConn
 }
 
+func (Network *Network) GetLocalIP() string {
+	addrs, err := net.InterfaceAddrs()
+	if err != nil {
+		return ""
+	}
+	for _, address := range addrs {
+		if ipnet, ok := address.(*net.IPNet); ok && !ipnet.IP.IsLoopback() {
+			if ipnet.IP.To4() != nil {
+				return ipnet.IP.String()
+			}
+		}
+	}
+	return ""
+}
+
 func Listen(ip string, port int) (*Network, error) {
 	addr, err := net.ResolveUDPAddr("udp", ip+":"+strconv.Itoa(port))
 	if err != nil {

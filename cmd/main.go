@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"net"
 	"os"
 	"strconv"
 	"strings"
@@ -10,16 +9,6 @@ import (
 
 	"github.com/antonfollinger/kademlia_go/internal/kademlia"
 )
-
-func getContainerIP() string {
-	addrs, _ := net.InterfaceAddrs()
-	for _, addr := range addrs {
-		if ipnet, ok := addr.(*net.IPNet); ok && !ipnet.IP.IsLoopback() && ipnet.IP.To4() != nil {
-			return ipnet.IP.String()
-		}
-	}
-	return ""
-}
 
 func main() {
 	portStr := os.Getenv("PORT")
@@ -36,23 +25,37 @@ func main() {
 
 	fmt.Printf("Node listening on UDP port %d\n", port)
 
-	// Use InitKademlia to initialize the node
-	node := kademlia.InitKademlia(getContainerIP(), port)
-	node.Network = network // set the network field if needed
+	// Determine KademliaID
+	if idStr := os.Getenv("KAD_ID"); idStr != "" {
+		bootstrapnode := kademlia.InitKademlia(network.GetLocalIP(), port, true, os.Getenv("KAD_ID"))
+		bootstrapnode.SetNetworkInterface(network)
+		fmt.Println("Using fixed KademliaID:", idStr)
+
+	}
+	node := kademlia.InitKademlia(network.GetLocalIP(), port, false, "")
+	node.SetNetworkInterface(network)
 
 	peer := os.Getenv("PEER")
 	if peer != "" {
-		// peer format: ip:port
+		fmt.Println("Starting as peer, connecting to", peer)
+
 		time.Sleep(2 * time.Second)
+
 		parts := strings.Split(peer, ":")
 		if len(parts) == 2 {
+			bootstrapID := kademlia.NewKademliaID(os.Getenv("KAD_ID"))
 			peerPort, _ := strconv.Atoi(parts[1])
-			peerContact := kademlia.NewContact(kademlia.NewRandomKademliaID(), parts[0], peerPort)
+			peerContact := kademlia.NewContact(bootstrapID, parts[0], peerPort) // << use same ID
 			node.RoutingTable.AddContact(peerContact)
-			fmt.Printf("Peer Contact: %+v, KademliaID: %s\n", peerContact, peerContact.ID.String())
-			network.SendPingMessage(&node.RoutingTable.FindClosestContacts(peerContact.ID, 1)[0])
+
+			fmt.Printf("Added peer contact: %+v, KademliaID: %s\n",
+				peerContact, peerContact.ID.String())
+
+			node.Network.SendPingMessage(&node.RoutingTable.FindClosestContacts(peerContact.ID, 1)[0])
 			node.RoutingTable.Print()
 		}
+	} else {
+		fmt.Println("Starting as bootstrap node")
 	}
 
 	select {}
