@@ -58,18 +58,8 @@ func (network *Network) listenLoop() {
 		}
 
 		// Hand off to the RPC handler
-		go network.handleRPC(&msg, addr)
+		go network.handleRPC(&msg)
 	}
-}
-
-func (network *Network) SendFindDataMessage(hash string) {
-	// For demo, just print
-	fmt.Println("SendFindDataMessage called with hash:", hash)
-}
-
-func (network *Network) SendStoreMessage(data []byte) {
-	// For demo, just print
-	fmt.Println("SendStoreMessage called with data:", string(data))
 }
 
 func (network *Network) SendMessage(contact *Contact, msg *RPCMessage) error {
