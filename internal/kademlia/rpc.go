@@ -8,10 +8,9 @@ import (
 
 type Payload struct {
 	Contacts      []Contact `json:"contacts,omitempty"`
-	Contact       *Contact  `json:"contact,omitempty"`
+	SourceContact *Contact  `json:"src_contact,omitempty"`
 	Key           string    `json:"key,omitempty"`
 	Data          []byte    `json:"data,omitempty"`
-	StringMessage string    `json:"string_message,omitempty"`
 	Error         string    `json:"error,omitempty"`
 }
 
@@ -43,7 +42,7 @@ func NewRPCMessage(msgType string, payload Payload /* srcAddr *net.UDPAddr, dstA
 func (network *Network) SendPingMessage(contact *Contact) error {
 	// Build payload with my own contact
 	payload := Payload{
-		Contact: &network.Kademlia.RoutingTable.me,
+		SourceContact: &network.Kademlia.RoutingTable.me,
 	}
 
 	// Build RPCMessage with helper
@@ -61,25 +60,26 @@ func (network *Network) handleRPC(msg *RPCMessage) {
 	case "PING":
 		if msg.Query {
 
-			network.Kademlia.RoutingTable.AddContact(*msg.Payload.Contact)
-			replyPayload := Payload{Contact: &network.Kademlia.RoutingTable.me}
+			network.Kademlia.RoutingTable.AddContact(*msg.Payload.SourceContact)
+			replyPayload := Payload{SourceContact: &network.Kademlia.RoutingTable.me}
 			reply := NewRPCMessage("PING", replyPayload, false)
 			reply.PacketID = msg.PacketID // match request ID
 			fmt.Printf("Got PING from %s:%d (ID=%s, PacketID=%s)\n",
-				msg.Payload.Contact.Address,
-				msg.Payload.Contact.Port,
-				msg.Payload.Contact.ID.String(),
+				msg.Payload.SourceContact.Address,
+				msg.Payload.SourceContact.Port,
+				msg.Payload.SourceContact.ID.String(),
 				msg.PacketID)
-			_ = network.SendMessage(msg.Payload.Contact, reply)
+			_ = network.SendMessage(msg.Payload.SourceContact, reply)
 		} else {
-			if msg.Payload.Contact != nil {
-				network.Kademlia.RoutingTable.AddContact(*msg.Payload.Contact)
+			if msg.Payload.SourceContact != nil {
+				network.Kademlia.RoutingTable.AddContact(*msg.Payload.SourceContact)
 				fmt.Printf("Got PONG from %s:%d (ID=%s, PacketID=%s)\n",
-					msg.Payload.Contact.Address,
-					msg.Payload.Contact.Port,
-					msg.Payload.Contact.ID.String(),
+					msg.Payload.SourceContact.Address,
+					msg.Payload.SourceContact.Port,
+					msg.Payload.SourceContact.ID.String(),
 					msg.PacketID)
 			}
 		}
 	}
+
 }
