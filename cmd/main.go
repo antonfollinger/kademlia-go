@@ -17,46 +17,61 @@ func main() {
 	}
 	port, _ := strconv.Atoi(portStr)
 
+	// Start UDP network
 	network, err := kademlia.Listen("0.0.0.0", port)
 	if err != nil {
 		fmt.Println("Failed to listen:", err)
 		return
 	}
-
 	fmt.Printf("Node listening on UDP port %d\n", port)
 
-	// Determine KademliaID
-	if idStr := os.Getenv("KAD_ID"); idStr != "" {
-		bootstrapnode := kademlia.InitKademlia(network.GetLocalIP(), port, true, os.Getenv("KAD_ID"))
-		bootstrapnode.SetNetworkInterface(network)
-		fmt.Println("Using fixed KademliaID:", idStr)
-
-	}
-	node := kademlia.InitKademlia(network.GetLocalIP(), port, false, "")
-	node.SetNetworkInterface(network)
-
+	// Create the Kademlia node
+	var node *kademlia.Kademlia
+	idStr := os.Getenv("KAD_ID")
 	peer := os.Getenv("PEER")
-	if peer != "" {
-		fmt.Println("Starting as peer, connecting to", peer)
+	if idStr != "" && peer == "" {
+		node = kademlia.InitKademlia(network.GetLocalIP(), port, true, idStr)
+		fmt.Println("Using fixed KademliaID:", idStr)
+	} else {
+		node = kademlia.InitKademlia(network.GetLocalIP(), port, false, "")
+	}
+	node.SetNetworkInterface(network)
+	network.Kademlia = node // link back so RPC handler can see it
 
-		time.Sleep(2 * time.Second)
+	if peer != "" {
+		// --- run as peer ---
+		fmt.Println("Starting as peer, connecting to", peer)
+		time.Sleep(2 * time.Second) // give bootstrap time to start
 
 		parts := strings.Split(peer, ":")
 		if len(parts) == 2 {
-			bootstrapID := kademlia.NewKademliaID(os.Getenv("KAD_ID"))
+			peerID := kademlia.NewKademliaID(os.Getenv("KAD_ID"))
 			peerPort, _ := strconv.Atoi(parts[1])
-			peerContact := kademlia.NewContact(bootstrapID, parts[0], peerPort) // << use same ID
+			peerContact := kademlia.NewContact(peerID, parts[0], peerPort)
+
+			// Add bootstrap to routing table
 			node.RoutingTable.AddContact(peerContact)
+			fmt.Printf("Added peer contact: %s (ID=%s)\n",
+				peerContact.Address, peerContact.ID.String())
 
-			fmt.Printf("Added peer contact: %+v, KademliaID: %s\n",
-				peerContact, peerContact.ID.String())
-
-			node.Network.SendPingMessage(&node.RoutingTable.FindClosestContacts(peerContact.ID, 1)[0])
-			node.RoutingTable.Print()
+			// Send PING to bootstrap
+			if err := node.Network.SendPingMessage(&peerContact); err != nil {
+				fmt.Println("Error sending PING:", err)
+			}
 		}
 	} else {
+		// --- run as bootstrap ---
 		fmt.Println("Starting as bootstrap node")
+
+		// Periodically print routing table
+		go func() {
+			for {
+				time.Sleep(10 * time.Second)
+				fmt.Println("=== Routing Table Dump ===")
+				node.RoutingTable.Print()
+			}
+		}()
 	}
 
-	select {}
+	select {} // keep running
 }

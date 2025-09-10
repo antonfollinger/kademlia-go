@@ -2,6 +2,8 @@ module github.com/antonfollinger/kademlia_go
 
 require github.com/stretchr/testify v1.11.1
 
+require github.com/google/uuid v1.3.0
+
 require (
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect

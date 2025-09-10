@@ -1,16 +1,18 @@
 package kademlia
 
 import (
+	"encoding/json"
 	"fmt"
 	"net"
 	"strconv"
 )
 
 type Network struct {
-	Conn *net.UDPConn
+	Kademlia *Kademlia
+	Conn     *net.UDPConn
 }
 
-func (Network *Network) GetLocalIP() string {
+func (network *Network) GetLocalIP() string {
 	addrs, err := net.InterfaceAddrs()
 	if err != nil {
 		return ""
@@ -40,33 +42,24 @@ func Listen(ip string, port int) (*Network, error) {
 }
 
 func (network *Network) listenLoop() {
-	buf := make([]byte, 1024)
+	buf := make([]byte, 2048) // bigger buffer for JSON
 	for {
 		n, addr, err := network.Conn.ReadFromUDP(buf)
 		if err != nil {
-			fmt.Println("Error reading:", err)
+			fmt.Println("Error reading UDP:", err)
 			continue
 		}
-		msg := string(buf[:n])
-		fmt.Printf("Received from %s: %s\n", addr, msg)
-		if msg == "PING" {
-			// Send PONG back to sender
-			_, err := network.Conn.WriteToUDP([]byte("PONG"), addr)
-			if err != nil {
-				fmt.Println("Error sending PONG:", err)
-			} else {
-				fmt.Printf("Sent PONG to %s\n", addr)
-			}
+
+		// Decode into RPCMessage
+		var msg RPCMessage
+		if err := json.Unmarshal(buf[:n], &msg); err != nil {
+			fmt.Println("Invalid JSON from", addr, ":", string(buf[:n]))
+			continue
 		}
+
+		// Hand off to the RPC handler
+		go network.handleRPC(&msg, addr)
 	}
-}
-
-func (network *Network) SendPingMessage(contact *Contact) {
-	network.sendMessage(contact, "PING")
-}
-
-func (network *Network) SendFindContactMessage(contact *Contact) {
-	network.sendMessage(contact, "FIND_CONTACT")
 }
 
 func (network *Network) SendFindDataMessage(hash string) {
@@ -79,14 +72,24 @@ func (network *Network) SendStoreMessage(data []byte) {
 	fmt.Println("SendStoreMessage called with data:", string(data))
 }
 
-func (network *Network) sendMessage(contact *Contact, msg string) {
-	addr, err := net.ResolveUDPAddr("udp", contact.Address+":"+strconv.Itoa(contact.Port))
+func (network *Network) SendMessage(contact *Contact, msg *RPCMessage) error {
+	// Marshal RPCMessage into JSON
+	data, err := json.Marshal(msg)
 	if err != nil {
-		fmt.Println("ResolveUDPAddr error:", err)
-		return
+		return fmt.Errorf("failed to marshal RPCMessage: %w", err)
 	}
-	_, err = network.Conn.WriteToUDP([]byte(msg), addr)
+
+	// Build UDP address from Contact
+	addr, err := net.ResolveUDPAddr("udp", fmt.Sprintf("%s:%d", contact.Address, contact.Port))
 	if err != nil {
-		fmt.Println("WriteToUDP error:", err)
+		return fmt.Errorf("failed to resolve UDP addr: %w", err)
 	}
+
+	// Send JSON bytes
+	_, err = network.Conn.WriteToUDP(data, addr)
+	if err != nil {
+		return fmt.Errorf("failed to send UDP message: %w", err)
+	}
+
+	return nil
 }
