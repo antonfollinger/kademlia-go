@@ -44,7 +44,6 @@ func main() {
 			peerContact, peerContact.ID.String())
 
 		k.Server.RunServer()
-		k.Client.SendPingMessage("0.0.0.0:1234")
 	}
 
 	select {}

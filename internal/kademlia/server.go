@@ -18,6 +18,7 @@ type Server struct {
 }
 
 func InitServer(ip string) (*Server, error) {
+	fmt.Println("addr: ", ip)
 	udpAddr, err := net.ResolveUDPAddr("udp", ip)
 	if err != nil {
 		return nil, err
@@ -42,7 +43,6 @@ func (s *Server) RunServer() {
 	go s.listen()
 	go s.handleIncoming()
 	go s.respond()
-
 }
 
 func (s *Server) listen() {
