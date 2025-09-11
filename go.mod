@@ -1,4 +1,4 @@
-module github.com/antonfollinger/kademlia_go
+module github.com/antonfollinger/kademlia-go/tree/dev-RPC
 
 require (
 	github.com/google/uuid v1.6.0

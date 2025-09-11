@@ -1,7 +1,7 @@
 package kademlia
 
 import (
-	"fmt"
+	"encoding/json"
 	"net"
 )
 
@@ -25,32 +25,32 @@ func InitClient(ip string) (*Client, error) {
 	return c, nil
 }
 
-func (server *Server) SendPingMessage(contact *Contact) {
-	server.sendMessage(contact, "PING")
+func (server *Server) SendPingMessage(ip string) {
+	conn, err := net.Dial("udp", ip)
+	if err != nil {
+		// handle error, e.g., log or return
+		return
+	}
+	defer conn.Close()
+
+	packet := CreateRPCMessage("PING", Payload{})
+	data, err := json.Marshal(packet)
+	if err != nil {
+		// handle error
+		return
+	}
+
+	_, _ = conn.Write(data)
 }
 
 func (server *Server) SendFindContactMessage(contact *Contact) {
-	server.sendMessage(contact, "FIND_CONTACT")
+	// TODO
 }
 
 func (server *Server) SendFindDataMessage(hash string) {
-	// For demo, just print
-	fmt.Println("SendFindDataMessage called with hash:", hash)
+	// TODO
 }
 
 func (server *Server) SendStoreMessage(data []byte) {
-	// For demo, just print
-	fmt.Println("SendStoreMessage called with data:", string(data))
-}
-
-func (server *Server) sendMessage(contact *Contact, msg string) {
-	addr, err := net.ResolveUDPAddr("udp", contact.Address)
-	if err != nil {
-		fmt.Println("ResolveUDPAddr error:", err)
-		return
-	}
-	_, err = server.conn.WriteToUDP([]byte(msg), addr)
-	if err != nil {
-		fmt.Println("WriteToUDP error:", err)
-	}
+	// TODO
 }

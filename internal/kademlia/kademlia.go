@@ -4,36 +4,42 @@ import "net"
 
 type Kademlia struct {
 	addr        string
-	node        *Node
-	client      *Client
-	server      *Server
+	Node        *Node
+	Client      *Client
+	Server      *Server
 	isBootstrap bool
 }
 
 func InitKademlia(bootStrap bool) (*Kademlia, error) {
 	k := &Kademlia{}
-	ip := k.getLocalIP()
 
+	var ip string
+
+	if bootStrap {
+		ip = "0.0.0.0:1234"
+	} else {
+		ip = k.getLocalIP() + ":3000"
+	}
 	k.addr = ip
 	k.isBootstrap = bootStrap
 
 	// Node
 	var nodeErr error
-	k.node, nodeErr = InitNode(bootStrap, ip)
+	k.Node, nodeErr = InitNode(bootStrap, ip)
 	if nodeErr != nil {
 		return nil, nodeErr
 	}
 
 	// Client
 	var clientErr error
-	k.client, clientErr = InitClient(ip)
+	k.Client, clientErr = InitClient(ip)
 	if clientErr != nil {
 		return nil, clientErr
 	}
 
 	// Server
 	var serverErr error
-	k.server, serverErr = InitServer(ip)
+	k.Server, serverErr = InitServer(ip)
 	if serverErr != nil {
 		return nil, serverErr
 	}

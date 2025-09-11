@@ -3,59 +3,49 @@ package main
 import (
 	"fmt"
 	"os"
-	"strconv"
-	"strings"
 	"time"
 
-	"github.com/antonfollinger/kademlia_go/internal/kademlia"
+	"github.com/antonfollinger/kademlia-go/tree/dev-RPC/internal/kademlia"
 )
 
 func main() {
-	portStr := os.Getenv("PORT")
-	if portStr == "" {
-		portStr = "9001"
-	}
-	port, _ := strconv.Atoi(portStr)
 
-	network, err := kademlia.Listen("0.0.0.0", port)
-	if err != nil {
-		fmt.Println("Failed to listen:", err)
-		return
-	}
-
-	fmt.Printf("Node listening on UDP port %d\n", port)
-
-	// Determine KademliaID
-	if idStr := os.Getenv("KAD_ID"); idStr != "" {
-		bootstrapnode := kademlia.InitKademlia(network.GetLocalIP(), port, true, os.Getenv("KAD_ID"))
-		bootstrapnode.SetNetworkInterface(network)
-		fmt.Println("Using fixed KademliaID:", idStr)
-
-	}
-	node := kademlia.InitKademlia(network.GetLocalIP(), port, false, "")
-	node.SetNetworkInterface(network)
-
+	isBootstrap := os.Getenv("BOOTSTRAP")
 	peer := os.Getenv("PEER")
-	if peer != "" {
+
+	var k *kademlia.Kademlia
+	var err error
+
+	if isBootstrap == "TRUE" {
+		k, err = kademlia.InitKademlia(true)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Failed to initialize Kademlia: %v\n", err)
+			os.Exit(1)
+		}
+		fmt.Println("Starting as bootstrap node")
+
+		k.Server.RunServer()
+	} else {
+		k, err = kademlia.InitKademlia(false)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Failed to initialize Kademlia: %v\n", err)
+			os.Exit(1)
+		}
 		fmt.Println("Starting as peer, connecting to", peer)
 
 		time.Sleep(2 * time.Second)
 
-		parts := strings.Split(peer, ":")
-		if len(parts) == 2 {
-			bootstrapID := kademlia.NewKademliaID(os.Getenv("KAD_ID"))
-			peerPort, _ := strconv.Atoi(parts[1])
-			peerContact := kademlia.NewContact(bootstrapID, parts[0], peerPort) // << use same ID
-			node.RoutingTable.AddContact(peerContact)
+		bootstrapID := kademlia.NewKademliaID("FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF")
+		peerContact := kademlia.NewContact(bootstrapID, "0.0.0.0:1234")
 
-			fmt.Printf("Added peer contact: %+v, KademliaID: %s\n",
-				peerContact, peerContact.ID.String())
+		k.Node.RoutingTable.AddContact(peerContact)
 
-			node.Network.SendPingMessage(&node.RoutingTable.FindClosestContacts(peerContact.ID, 1)[0])
-			node.RoutingTable.Print()
-		}
-	} else {
-		fmt.Println("Starting as bootstrap node")
+		fmt.Printf("Added peer contact: %+v, KademliaID: %s\n",
+			peerContact, peerContact.ID.String())
+
+		k.Server.RunServer()
+
+		k.Client.SendPingMessage(peerContact.Address)
 	}
 
 	select {}

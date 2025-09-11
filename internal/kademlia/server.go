@@ -1,6 +1,8 @@
 package kademlia
 
 import (
+	"encoding/json"
+	"fmt"
 	"net"
 )
 
@@ -9,16 +11,10 @@ const (
 	OutgoingBufferSize int = 64
 )
 
-type Message struct {
-	SourceAddr      string
-	DestinationAddr string
-	Data            string
-}
-
 type Server struct {
 	conn     *net.UDPConn
-	incoming chan Message
-	outgoing chan Message
+	incoming chan RPCMessage
+	outgoing chan RPCMessage
 }
 
 func InitServer(ip string) (*Server, error) {
@@ -34,33 +30,73 @@ func InitServer(ip string) (*Server, error) {
 
 	s := &Server{
 		conn:     conn,
-		incoming: make(chan Message, IncomingBufferSize),
-		outgoing: make(chan Message, OutgoingBufferSize),
+		incoming: make(chan RPCMessage, IncomingBufferSize),
+		outgoing: make(chan RPCMessage, OutgoingBufferSize),
 	}
 
 	return s, nil
 }
 
-func (s *Server) Run() {
+func (s *Server) RunServer() {
+	fmt.Println("RunServer()")
 	go s.listen()
+	go s.handleIncoming()
 	go s.respond()
+
 }
 
 func (s *Server) listen() {
-	buf := make([]byte, 1024)
+	buf := make([]byte, 4096)
 	for {
-		select {
-		default:
-			n, _, err := s.conn.ReadFromUDP(buf)
-			if err != nil {
-				continue
-			}
-			msg := Message{}
-			s.incoming <- msg
+		n, addr, err := s.conn.ReadFromUDP(buf)
+		if err != nil {
+			fmt.Println("listen error:", err)
+			continue
 		}
+		var rpc RPCMessage
+
+		if err := json.Unmarshal(buf[:n], &rpc); err != nil {
+			continue
+		}
+
+		if rpc.Payload.SourceContact.Address == "" {
+			rpc.Payload.SourceContact.Address = addr.String()
+		}
+
+		s.incoming <- rpc
+	}
+}
+
+func (s *Server) handleIncoming() {
+	for rpc := range s.incoming {
+		var resp RPCMessage
+		switch rpc.Type {
+		case "PING":
+			fmt.Println("handlePing()")
+			resp = s.handlePing(rpc)
+		default:
+			resp = *CreateRPCMessage("ERROR", Payload{})
+		}
+		s.outgoing <- resp
 	}
 }
 
 func (s *Server) respond() {
+	for {
+		rpc := <-s.outgoing
+		target := rpc.Payload.SourceContact.Address // must carry destination
+		data, _ := json.Marshal(rpc)
+		addr, _ := net.ResolveUDPAddr("udp", target)
+		_, _ = s.conn.WriteToUDP(data, addr)
+	}
+}
 
+func (s *Server) handlePing(rpc RPCMessage) RPCMessage {
+	resp := CreateRPCMessage("OK", Payload{})
+
+	// Ensure same PID
+	PID := rpc.PacketID
+	resp.PacketID = PID
+
+	return *resp
 }

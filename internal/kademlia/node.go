@@ -5,9 +5,9 @@ const (
 )
 
 type Node struct {
-	id           *KademliaID
-	routingTable *RoutingTable
-	storage      map[string][]byte
+	Id           *KademliaID
+	RoutingTable *RoutingTable
+	Storage      map[string][]byte
 }
 
 func InitNode(isBootstrap bool, ip string) (*Node, error) {
@@ -24,9 +24,9 @@ func InitNode(isBootstrap bool, ip string) (*Node, error) {
 	rt := NewRoutingTable(c)
 
 	n := &Node{
-		id:           nodeID,
-		routingTable: rt,
-		storage:      make(map[string][]byte),
+		Id:           nodeID,
+		RoutingTable: rt,
+		Storage:      make(map[string][]byte),
 	}
 
 	return n, nil
