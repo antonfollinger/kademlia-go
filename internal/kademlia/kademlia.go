@@ -1,6 +1,9 @@
 package kademlia
 
-import "net"
+import (
+	"fmt"
+	"net"
+)
 
 type Kademlia struct {
 	addr        string
@@ -10,15 +13,14 @@ type Kademlia struct {
 	isBootstrap bool
 }
 
-func InitKademlia(bootStrap bool) (*Kademlia, error) {
+func InitKademlia(bootStrap bool, port string) (*Kademlia, error) {
 	k := &Kademlia{}
 
 	var ip string
-
 	if bootStrap {
-		ip = "0.0.0.0:1234"
+		ip = "0.0.0.0:" + port
 	} else {
-		ip = k.getLocalIP() + ":3000"
+		ip = k.getLocalIP() + ":" + port
 	}
 	k.addr = ip
 	k.isBootstrap = bootStrap
@@ -29,6 +31,8 @@ func InitKademlia(bootStrap bool) (*Kademlia, error) {
 	if nodeErr != nil {
 		return nil, nodeErr
 	}
+
+	fmt.Println("ME: ", k.Node.RoutingTable.Me.String())
 
 	// Client
 	var clientErr error

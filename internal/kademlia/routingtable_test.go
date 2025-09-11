@@ -12,7 +12,7 @@ func Test_routingtable_NewRoutingTable(t *testing.T) {
 	rt := NewRoutingTable(contact)
 
 	assert.NotNil(t, rt)
-	assert.Equal(t, contact, rt.me)
+	assert.Equal(t, contact, rt.Me)
 	assert.Len(t, rt.buckets, IDLength*8)
 	for i := 0; i < IDLength*8; i++ {
 		assert.NotNil(t, rt.buckets[i])

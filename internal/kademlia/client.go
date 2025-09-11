@@ -11,17 +11,13 @@ const (
 )
 
 type Client struct {
-	conn     *net.UDPConn
 	addr     string
 	request  chan string
 	response chan string
 }
 
 func InitClient(ip string) (*Client, error) {
-	addr, _ := net.ResolveUDPAddr("udp", ":0") // :0 = pick random available port
-	conn, _ := net.ListenUDP("udp", addr)
 	c := &Client{
-		conn:     conn,
 		request:  make(chan string, ClientBufferSize),
 		response: make(chan string, ClientBufferSize),
 	}
@@ -30,24 +26,34 @@ func InitClient(ip string) (*Client, error) {
 	return c, nil
 }
 
-func (c *Client) SendPingMessage(ip string) {
-	fmt.Println("Sending ping")
-	// Create the RPC packet
-	packet := CreateRPCMessage("PING", Payload{})
-
-	data, err := json.Marshal(packet)
-	if err != nil {
-		return
-	}
-
-	// Resolve target address
+func (c *Client) SendPingMessage(ip string) error {
 	addr, err := net.ResolveUDPAddr("udp", ip)
 	if err != nil {
-		return
+		fmt.Println("Resolve error: ", err)
+		return err
 	}
 
-	// Send via existing UDPConn
-	_, _ = c.conn.WriteToUDP(data, addr)
+	conn, err := net.DialUDP("udp", nil, addr)
+	if err != nil {
+		fmt.Println("Dial error: ", err)
+		return err
+	}
+	defer conn.Close()
+
+	msg := CreateRPCMessage("PING", Payload{})
+	data, err := json.Marshal(msg)
+	if err != nil {
+		fmt.Println("Marshal error: ", err)
+		return err
+	}
+
+	_, err = conn.Write(data)
+	fmt.Println("PING sent to: ", ip)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (server *Server) SendFindContactMessage(contact *Contact) {

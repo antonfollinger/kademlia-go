@@ -7,8 +7,8 @@ import (
 )
 
 const (
-	IncomingBufferSize int = 256
-	OutgoingBufferSize int = 64
+	IncomingBufferSize int = 4096
+	OutgoingBufferSize int = 1024
 )
 
 type Server struct {
@@ -18,7 +18,6 @@ type Server struct {
 }
 
 func InitServer(ip string) (*Server, error) {
-	fmt.Println("addr: ", ip)
 	udpAddr, err := net.ResolveUDPAddr("udp", ip)
 	if err != nil {
 		return nil, err
@@ -34,26 +33,27 @@ func InitServer(ip string) (*Server, error) {
 		incoming: make(chan RPCMessage, IncomingBufferSize),
 		outgoing: make(chan RPCMessage, OutgoingBufferSize),
 	}
-
+	fmt.Println("Listening on: ", ip)
 	return s, nil
 }
 
 func (s *Server) RunServer() {
-	fmt.Println("RunServer()")
+	fmt.Println("Server running...")
 	go s.listen()
 	go s.handleIncoming()
 	go s.respond()
 }
 
 func (s *Server) listen() {
+	fmt.Println("Listening...")
 	buf := make([]byte, 4096)
 	for {
 		n, addr, err := s.conn.ReadFromUDP(buf)
-		fmt.Println("Found RPC")
 		if err != nil {
 			fmt.Println("listen error:", err)
 			continue
 		}
+		fmt.Printf("Found RPC from %v, bytes read: %d\n", addr, n)
 		var rpc RPCMessage
 
 		if err := json.Unmarshal(buf[:n], &rpc); err != nil {

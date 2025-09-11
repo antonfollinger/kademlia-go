@@ -12,12 +12,13 @@ func main() {
 
 	isBootstrap := os.Getenv("BOOTSTRAP")
 	peer := os.Getenv("PEER")
+	port := os.Getenv("PORT")
 
 	var k *kademlia.Kademlia
 	var err error
 
 	if isBootstrap == "TRUE" {
-		k, err = kademlia.InitKademlia(true)
+		k, err = kademlia.InitKademlia(true, port)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Failed to initialize Kademlia: %v\n", err)
 			os.Exit(1)
@@ -26,7 +27,7 @@ func main() {
 
 		k.Server.RunServer()
 	} else {
-		k, err = kademlia.InitKademlia(false)
+		k, err = kademlia.InitKademlia(false, port)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Failed to initialize Kademlia: %v\n", err)
 			os.Exit(1)
@@ -40,10 +41,10 @@ func main() {
 
 		k.Node.RoutingTable.AddContact(peerContact)
 
-		fmt.Printf("Added peer contact: %+v, KademliaID: %s\n",
-			peerContact, peerContact.ID.String())
+		fmt.Printf("Added peer contact: %+v \n\n", peerContact)
 
 		k.Server.RunServer()
+		k.Client.SendPingMessage("0.0.0.0:1234")
 	}
 
 	select {}
