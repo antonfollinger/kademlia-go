@@ -49,6 +49,7 @@ func (s *Server) listen() {
 	buf := make([]byte, 4096)
 	for {
 		n, addr, err := s.conn.ReadFromUDP(buf)
+		fmt.Println("Found RPC")
 		if err != nil {
 			fmt.Println("listen error:", err)
 			continue

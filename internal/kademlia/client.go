@@ -2,6 +2,7 @@ package kademlia
 
 import (
 	"encoding/json"
+	"fmt"
 	"net"
 )
 
@@ -25,7 +26,8 @@ func InitClient(ip string) (*Client, error) {
 	return c, nil
 }
 
-func (server *Server) SendPingMessage(ip string) {
+func (c *Client) SendPingMessage(ip string) {
+	fmt.Println("Sending ping")
 	conn, err := net.Dial("udp", ip)
 	if err != nil {
 		// handle error, e.g., log or return
