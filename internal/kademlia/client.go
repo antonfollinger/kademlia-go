@@ -26,7 +26,6 @@ func InitClient(ip string) (*Client, error) {
 	return c, nil
 }
 
-// Skickar PING till fel adress, ska va till typ 172.19.0.11:1234
 func (c *Client) SendPingMessage(ip string) error {
 	addr, err := net.ResolveUDPAddr("udp", ip)
 	fmt.Println("addr: ", addr.String())

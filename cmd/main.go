@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"net"
 	"os"
 	"time"
 
@@ -13,6 +14,12 @@ func main() {
 	isBootstrap := os.Getenv("BOOTSTRAP")
 	peer := os.Getenv("PEER")
 	port := os.Getenv("PORT")
+
+	// Get Bootstrap nodes IP address
+	bootStrapAddr, IPerr := net.LookupIP(peer)
+	if IPerr != nil {
+		fmt.Println("LookupIP error", IPerr)
+	}
 
 	var k *kademlia.Kademlia
 	var err error
@@ -44,7 +51,12 @@ func main() {
 		fmt.Printf("Added peer contact: %+v \n\n", peerContact)
 
 		k.Server.RunServer()
-		k.Client.SendPingMessage("0.0.0.0:1234")
+		if len(bootStrapAddr) > 0 {
+			addr := fmt.Sprintf("%s:%s", bootStrapAddr[0].String(), "1234")
+			k.Client.SendPingMessage(addr)
+		} else {
+			fmt.Fprintln(os.Stderr, "No valid bootstrap IP address found")
+		}
 	}
 
 	select {}
