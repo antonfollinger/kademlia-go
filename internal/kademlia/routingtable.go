@@ -13,6 +13,10 @@ type RoutingTable struct {
 	buckets [IDLength * 8]*bucket
 }
 
+func GetMe(routingTable *RoutingTable) Contact {
+	return routingTable.me
+}
+
 // NewRoutingTable returns a new instance of a RoutingTable
 func NewRoutingTable(me Contact) *RoutingTable {
 	routingTable := &RoutingTable{}

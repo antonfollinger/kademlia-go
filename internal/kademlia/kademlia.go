@@ -39,9 +39,11 @@ func (kademlia *Kademlia) LookupContact(target *Contact) []Contact {
 	return kademlia.RoutingTable.FindClosestContacts(target.ID, bucketSize)
 }
 
-func (kademlia *Kademlia) LookupData(hash string) {
-
+func (kademlia *Kademlia) LookupData(hash string) []byte {
+	return kademlia.Storage[hash]
 }
-func (kademlia *Kademlia) Store(data []byte) {
-	// TODO
+func (kademlia *Kademlia) Store(key string, data []byte) {
+
+	kademlia.Storage[key] = data
+	fmt.Printf("Stored data with key %s\n", key)
 }

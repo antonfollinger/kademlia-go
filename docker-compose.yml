@@ -1,355 +1,96 @@
 version: "3.9"
+
 services:
   node1:
     build: .
     image: kademlia_node
+    container_name: node1
     environment:
       - PORT=9001
-      - KAD_ID=0000000000000000000000000000000000000000
+      - KAD_ID=1010101010101010101010101010101010101010
     networks: [testnet]
+
   node2:
     image: kademlia_node
+    container_name: node2
     environment:
       - PORT=9002
-      - PEER=node1:9001
-      - KAD_ID=0000000000000000000000000000000000000000
+      - KAD_ID=1010101010101010101010101010101010101011
+      - PEER=node1:9001@1010101010101010101010101010101010101010
     networks: [testnet]
+
   node3:
     image: kademlia_node
+    container_name: node3
     environment:
       - PORT=9003
-      - PEER=node1:9001
-      - KAD_ID=0000000000000000000000000000000000000000
+      - KAD_ID=1010101010101010101010101010101010101100
+      - PEER=node1:9001@1010101010101010101010101010101010101010
     networks: [testnet]
+
   node4:
     image: kademlia_node
+    container_name: node4
     environment:
       - PORT=9004
-      - PEER=node1:9001
-      - KAD_ID=0000000000000000000000000000000000000000
+      - KAD_ID=1010101010101010101010101010101010101101
+      - PEER=node1:9001@1010101010101010101010101010101010101010
     networks: [testnet]
+
   node5:
     image: kademlia_node
+    container_name: node5
     environment:
       - PORT=9005
-      - PEER=node1:9001
-      - KAD_ID=0000000000000000000000000000000000000000
+      - KAD_ID=1010101010101010101010101010101010110000
+      - PEER=node1:9001@1010101010101010101010101010101010101010
     networks: [testnet]
+
   node6:
     image: kademlia_node
+    container_name: node6
     environment:
       - PORT=9006
-      - PEER=node1:9001
-      - KAD_ID=0000000000000000000000000000000000000000
+      - KAD_ID=1010101010101010101010101010101010110001
+      - PEER=node1:9001@1010101010101010101010101010101010101010
     networks: [testnet]
+
   node7:
     image: kademlia_node
+    container_name: node7
     environment:
       - PORT=9007
-      - PEER=node1:9001
-      - KAD_ID=0000000000000000000000000000000000000000
+      - KAD_ID=1010101010101010101010101010101010110010
+      - PEER=node1:9001@1010101010101010101010101010101010101010
     networks: [testnet]
+
   node8:
     image: kademlia_node
+    container_name: node8
     environment:
       - PORT=9008
-      - PEER=node1:9001
-      - KAD_ID=0000000000000000000000000000000000000000
+      - KAD_ID=1010101010101010101010101010101010110011
+      - PEER=node1:9001@1010101010101010101010101010101010101010
     networks: [testnet]
+
   node9:
     image: kademlia_node
+    container_name: node9
     environment:
       - PORT=9009
-      - PEER=node1:9001
-      - KAD_ID=0000000000000000000000000000000000000000
+      - KAD_ID=1010101010101010101010101010101010110100
+      - PEER=node1:9001@1010101010101010101010101010101010101010
     networks: [testnet]
+
   node10:
     image: kademlia_node
+    container_name: node10
     environment:
       - PORT=9010
-      - PEER=node1:9001
-      - KAD_ID=0000000000000000000000000000000000000000
+      - KAD_ID=1010101010101010101010101010101010110101
+      - PEER=node1:9001@1010101010101010101010101010101010101010
     networks: [testnet]
-  node11:
-    image: kademlia_node
-    environment:
-      - PORT=9011
-      - PEER=node1:9001
-      - KAD_ID=0000000000000000000000000000000000000000
-    networks: [testnet]
-  node12:
-    image: kademlia_node
-    environment:
-      - PORT=9012
-      - PEER=node1:9001
-      - KAD_ID=0000000000000000000000000000000000000000
-    networks: [testnet]
-  node13:
-    image: kademlia_node
-    environment:
-      - PORT=9013
-      - PEER=node1:9001
-      - KAD_ID=0000000000000000000000000000000000000000
-    networks: [testnet]
-  node14:
-    image: kademlia_node
-    environment:
-      - PORT=9014
-      - PEER=node1:9001
-      - KAD_ID=0000000000000000000000000000000000000000
-    networks: [testnet]
-  node15:
-    image: kademlia_node
-    environment:
-      - PORT=9015
-      - PEER=node1:9001
-      - KAD_ID=0000000000000000000000000000000000000000
-    networks: [testnet]
-  node16:
-    image: kademlia_node
-    environment:
-      - PORT=9016
-      - PEER=node1:9001
-      - KAD_ID=0000000000000000000000000000000000000000
-    networks: [testnet]
-  node17:
-    image: kademlia_node
-    environment:
-      - PORT=9017
-      - PEER=node1:9001
-      - KAD_ID=0000000000000000000000000000000000000000
-    networks: [testnet]
-  node18:
-    image: kademlia_node
-    environment:
-      - PORT=9018
-      - PEER=node1:9001
-      - KAD_ID=0000000000000000000000000000000000000000
-    networks: [testnet]
-  node19:
-    image: kademlia_node
-    environment:
-      - PORT=9019
-      - PEER=node1:9001
-      - KAD_ID=0000000000000000000000000000000000000000
-    networks: [testnet]
-  node20:
-    image: kademlia_node
-    environment:
-      - PORT=9020
-      - PEER=node1:9001
-      - KAD_ID=0000000000000000000000000000000000000000
-    networks: [testnet]
-  node21:
-    image: kademlia_node
-    environment:
-      - PORT=9021
-      - PEER=node1:9001
-      - KAD_ID=0000000000000000000000000000000000000000
-    networks: [testnet]
-  node22:
-    image: kademlia_node
-    environment:
-      - PORT=9022
-      - PEER=node1:9001
-      - KAD_ID=0000000000000000000000000000000000000000
-    networks: [testnet]
-  node23:
-    image: kademlia_node
-    environment:
-      - PORT=9023
-      - PEER=node1:9001
-      - KAD_ID=0000000000000000000000000000000000000000
-    networks: [testnet]
-  node24:
-    image: kademlia_node
-    environment:
-      - PORT=9024
-      - PEER=node1:9001
-      - KAD_ID=0000000000000000000000000000000000000000
-    networks: [testnet]
-  node25:
-    image: kademlia_node
-    environment:
-      - PORT=9025
-      - PEER=node1:9001
-      - KAD_ID=0000000000000000000000000000000000000000
-    networks: [testnet]
-  node26:
-    image: kademlia_node
-    environment:
-      - PORT=9026
-      - PEER=node1:9001
-      - KAD_ID=0000000000000000000000000000000000000000
-    networks: [testnet]
-  node27:
-    image: kademlia_node
-    environment:
-      - PORT=9027
-      - PEER=node1:9001
-      - KAD_ID=0000000000000000000000000000000000000000
-    networks: [testnet]
-  node28:
-    image: kademlia_node
-    environment:
-      - PORT=9028
-      - PEER=node1:9001
-      - KAD_ID=0000000000000000000000000000000000000000
-    networks: [testnet]
-  node29:
-    image: kademlia_node
-    environment:
-      - PORT=9029
-      - PEER=node1:9001
-      - KAD_ID=0000000000000000000000000000000000000000
-    networks: [testnet]
-  node30:
-    image: kademlia_node
-    environment:
-      - PORT=9030
-      - PEER=node1:9001
-      - KAD_ID=0000000000000000000000000000000000000000
-    networks: [testnet]
-  node31:
-    image: kademlia_node
-    environment:
-      - PORT=9031
-      - PEER=node1:9001
-      - KAD_ID=0000000000000000000000000000000000000000
-    networks: [testnet]
-  node32:
-    image: kademlia_node
-    environment:
-      - PORT=9032
-      - PEER=node1:9001
-      - KAD_ID=0000000000000000000000000000000000000000
-    networks: [testnet]
-  node33:
-    image: kademlia_node
-    environment:
-      - PORT=9033
-      - PEER=node1:9001
-      - KAD_ID=0000000000000000000000000000000000000000
-    networks: [testnet]
-  node34:
-    image: kademlia_node
-    environment:
-      - PORT=9034
-      - PEER=node1:9001
-      - KAD_ID=0000000000000000000000000000000000000000
-    networks: [testnet]
-  node35:
-    image: kademlia_node
-    environment:
-      - PORT=9035
-      - PEER=node1:9001
-      - KAD_ID=0000000000000000000000000000000000000000
-    networks: [testnet]
-  node36:
-    image: kademlia_node
-    environment:
-      - PORT=9036
-      - PEER=node1:9001
-      - KAD_ID=0000000000000000000000000000000000000000
-    networks: [testnet]
-  node37:
-    image: kademlia_node
-    environment:
-      - PORT=9037
-      - PEER=node1:9001
-      - KAD_ID=0000000000000000000000000000000000000000
-    networks: [testnet]
-  node38:
-    image: kademlia_node
-    environment:
-      - PORT=9038
-      - PEER=node1:9001
-      - KAD_ID=0000000000000000000000000000000000000000
-    networks: [testnet]
-  node39:
-    image: kademlia_node
-    environment:
-      - PORT=9039
-      - PEER=node1:9001
-      - KAD_ID=0000000000000000000000000000000000000000
-    networks: [testnet]
-  node40:
-    image: kademlia_node
-    environment:
-      - PORT=9040
-      - PEER=node1:9001
-      - KAD_ID=0000000000000000000000000000000000000000
-    networks: [testnet]
-  node41:
-    image: kademlia_node
-    environment:
-      - PORT=9041
-      - PEER=node1:9001
-      - KAD_ID=0000000000000000000000000000000000000000
-    networks: [testnet]
-  node42:
-    image: kademlia_node
-    environment:
-      - PORT=9042
-      - PEER=node1:9001
-      - KAD_ID=0000000000000000000000000000000000000000
-    networks: [testnet]
-  node43:
-    image: kademlia_node
-    environment:
-      - PORT=9043
-      - PEER=node1:9001
-      - KAD_ID=0000000000000000000000000000000000000000
-    networks: [testnet]
-  node44:
-    image: kademlia_node
-    environment:
-      - PORT=9044
-      - PEER=node1:9001
-      - KAD_ID=0000000000000000000000000000000000000000
-    networks: [testnet]
-  node45:
-    image: kademlia_node
-    environment:
-      - PORT=9045
-      - PEER=node1:9001
-      - KAD_ID=0000000000000000000000000000000000000000
-    networks: [testnet]
-  node46:
-    image: kademlia_node
-    environment:
-      - PORT=9046
-      - PEER=node1:9001
-      - KAD_ID=0000000000000000000000000000000000000000
-    networks: [testnet]
-  node47:
-    image: kademlia_node
-    environment:
-      - PORT=9047
-      - PEER=node1:9001
-      - KAD_ID=0000000000000000000000000000000000000000
-    networks: [testnet]
-  node48:
-    image: kademlia_node
-    environment:
-      - PORT=9048
-      - PEER=node1:9001
-      - KAD_ID=0000000000000000000000000000000000000000
-    networks: [testnet]
-  node49:
-    image: kademlia_node
-    environment:
-      - PORT=9049
-      - PEER=node1:9001
-      - KAD_ID=0000000000000000000000000000000000000000
-    networks: [testnet]
-  node50:
-    image: kademlia_node
-    environment:
-      - PORT=9050
-      - PEER=node1:9001
-      - KAD_ID=0000000000000000000000000000000000000000
-    networks: [testnet]
+
 networks:
   testnet:
     driver: bridge

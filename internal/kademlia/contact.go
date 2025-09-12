@@ -8,10 +8,10 @@ import (
 // Contact definition
 // stores the KademliaID, the ip address and the distance
 type Contact struct {
-	ID       *KademliaID
-	Address  string
+	ID       *KademliaID `json:"id"`
+	Address  string      `json:"address"`
 	distance *KademliaID
-	Port     int
+	Port     int `json:"port"`
 }
 
 // NewContact returns a new instance of a Contact

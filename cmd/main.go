@@ -10,6 +10,37 @@ import (
 	"github.com/antonfollinger/kademlia_go/internal/kademlia"
 )
 
+func parsePeersEnv() []kademlia.Contact {
+	var out []kademlia.Contact
+	val := os.Getenv("PEERS")
+	if val == "" {
+		val = os.Getenv("PEER")
+	}
+	if val == "" {
+		return out
+	}
+	items := strings.Split(val, ",")
+	for _, item := range items {
+		item = strings.TrimSpace(item)
+		hostPort, idStr, found := strings.Cut(item, "@")
+		if !found {
+			idStr = "0000000000000000000000000000000000000000"
+		}
+		host, portStr, ok := strings.Cut(hostPort, ":")
+		if !ok {
+			continue
+		}
+		port, err := strconv.Atoi(portStr)
+		if err != nil {
+			continue
+		}
+		id := kademlia.NewKademliaID(idStr)
+		c := kademlia.NewContact(id, host, port)
+		out = append(out, c)
+	}
+	return out
+}
+
 func main() {
 	portStr := os.Getenv("PORT")
 	if portStr == "" {
@@ -28,48 +59,66 @@ func main() {
 	// Create the Kademlia node
 	var node *kademlia.Kademlia
 	idStr := os.Getenv("KAD_ID")
-	peer := os.Getenv("PEER")
-	if idStr != "" && peer == "" {
+	if idStr != "" {
 		node = kademlia.InitKademlia(network.GetLocalIP(), port, true, idStr)
 		fmt.Println("Using fixed KademliaID:", idStr)
 	} else {
 		node = kademlia.InitKademlia(network.GetLocalIP(), port, false, "")
 	}
 	node.SetNetworkInterface(network)
-	network.Kademlia = node // link back so RPC handler can see it
+	network.Kademlia = node
 
-	if peer != "" {
-		// --- run as peer ---
-		fmt.Println("Starting as peer, connecting to", peer)
-		time.Sleep(2 * time.Second) // give bootstrap time to start
+	initialPeers := parsePeersEnv()
 
-		parts := strings.Split(peer, ":")
-		if len(parts) == 2 {
-			peerID := kademlia.NewKademliaID(os.Getenv("KAD_ID"))
-			peerPort, _ := strconv.Atoi(parts[1])
-			peerContact := kademlia.NewContact(peerID, parts[0], peerPort)
+	if len(initialPeers) > 0 {
+		fmt.Printf("Initial peers: %d\n", len(initialPeers))
+	}
 
-			// Add bootstrap to routing table
-			node.RoutingTable.AddContact(peerContact)
-			fmt.Printf("Added peer contact: %s (ID=%s)\n",
-				peerContact.Address, peerContact.ID.String())
-
-			// Send PING to bootstrap
-			if err := node.Network.SendPingMessage(&peerContact); err != nil {
-				fmt.Println("Error sending PING:", err)
-			}
-		}
-	} else {
-		// --- run as bootstrap ---
-		fmt.Println("Starting as bootstrap node")
-
-		// Periodically print routing table
+	if len(initialPeers) > 0 {
+		// === PEER NODES ===
 		go func() {
-			for {
+			me := kademlia.GetMe(node.RoutingTable)
+
+			// Step 1: PING loop for a while
+			for i := 0; i < 3; i++ { // do 3 rounds of PINGs
+				for _, c := range initialPeers {
+					if c.ID.Equals(me.ID) {
+						continue
+					}
+					ping := kademlia.NewRPCMessage("PING", kademlia.Payload{
+						TargetContact: &c,
+						SourceContact: &me,
+					}, true)
+					_ = node.Network.SendMessage(&c, ping)
+					fmt.Printf("Sent PING to %s:%d (ID=%s)\n", c.Address, c.Port, c.ID)
+				}
 				time.Sleep(10 * time.Second)
-				fmt.Println("=== Routing Table Dump ===")
-				node.RoutingTable.Print()
 			}
+
+			// Step 2: After delay, send a single FIND_NODE(self) to bootstrap
+			time.Sleep(5 * time.Second)
+			for _, c := range initialPeers {
+				findNode := kademlia.NewRPCMessage("FIND_NODE", kademlia.Payload{
+					TargetContact: &me,
+					SourceContact: &me,
+				}, true)
+				_ = node.Network.SendMessage(&c, findNode)
+				fmt.Printf("Sent FIND_NODE(self) to %s:%d (ID=%s)\n", c.Address, c.Port, c.ID)
+			}
+
+			// Step 3: Wait a bit for response, then dump routing table once
+			time.Sleep(5 * time.Second)
+			fmt.Println("=== Final Routing Table ===")
+			node.RoutingTable.Print()
+		}()
+	} else {
+		// === BOOTSTRAP NODE ===
+		fmt.Println("Running as bootstrap (will just collect PINGs)")
+		// Bootstrap can print its routing table once after some time
+		go func() {
+			time.Sleep(40 * time.Second)
+			fmt.Println("=== Bootstrap Routing Table ===")
+			node.RoutingTable.Print()
 		}()
 	}
 
