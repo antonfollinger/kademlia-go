@@ -36,14 +36,14 @@ func InitKademlia(bootStrap bool, port string) (*Kademlia, error) {
 
 	// Client
 	var clientErr error
-	k.Client, clientErr = InitClient(ip)
+	k.Client, clientErr = InitClient(k.Node, ip)
 	if clientErr != nil {
 		return nil, clientErr
 	}
 
 	// Server
 	var serverErr error
-	k.Server, serverErr = InitServer(ip)
+	k.Server, serverErr = InitServer(k.Node, ip)
 	if serverErr != nil {
 		return nil, serverErr
 	}

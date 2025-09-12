@@ -12,12 +12,13 @@ const (
 )
 
 type Server struct {
+	node     *Node
 	conn     *net.UDPConn
 	incoming chan RPCMessage
 	outgoing chan RPCMessage
 }
 
-func InitServer(ip string) (*Server, error) {
+func InitServer(node *Node, ip string) (*Server, error) {
 	udpAddr, err := net.ResolveUDPAddr("udp", ip)
 	if err != nil {
 		return nil, err
@@ -29,6 +30,7 @@ func InitServer(ip string) (*Server, error) {
 	}
 
 	s := &Server{
+		node:     node,
 		conn:     conn,
 		incoming: make(chan RPCMessage, IncomingBufferSize),
 		outgoing: make(chan RPCMessage, OutgoingBufferSize),
@@ -73,10 +75,9 @@ func (s *Server) handleIncoming() {
 		var resp RPCMessage
 		switch rpc.Type {
 		case "PING":
-			fmt.Println("handlePing()")
 			resp = s.handlePing(rpc)
 		default:
-			resp = *CreateRPCMessage("ERROR", Payload{})
+			resp = *CreateRPCMessage("ERROR", Payload{SourceContact: &s.node.RoutingTable.Me})
 		}
 		s.outgoing <- resp
 	}
@@ -93,7 +94,7 @@ func (s *Server) respond() {
 }
 
 func (s *Server) handlePing(rpc RPCMessage) RPCMessage {
-	resp := CreateRPCMessage("OK", Payload{})
+	resp := CreateRPCMessage("OK", Payload{SourceContact: rpc.Payload.SourceContact})
 
 	// Ensure same PID
 	PID := rpc.PacketID

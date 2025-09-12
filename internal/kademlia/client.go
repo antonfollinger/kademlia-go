@@ -11,13 +11,15 @@ const (
 )
 
 type Client struct {
+	node     *Node
 	addr     string
 	request  chan string
 	response chan string
 }
 
-func InitClient(ip string) (*Client, error) {
+func InitClient(node *Node, ip string) (*Client, error) {
 	c := &Client{
+		node:     node,
 		request:  make(chan string, ClientBufferSize),
 		response: make(chan string, ClientBufferSize),
 	}
@@ -42,7 +44,7 @@ func (c *Client) SendPingMessage(ip string) error {
 	}
 	defer conn.Close()
 
-	msg := CreateRPCMessage("PING", Payload{})
+	msg := CreateRPCMessage("PING", Payload{SourceContact: &c.node.RoutingTable.Me})
 	data, err := json.Marshal(msg)
 	if err != nil {
 		fmt.Println("Marshal error: ", err)
