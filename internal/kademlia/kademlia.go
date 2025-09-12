@@ -21,6 +21,7 @@ func InitKademlia(ip string, port int, bootstrap bool, bootstrapID string) *Kade
 		kademliaID = NewRandomKademliaID()
 		contact = NewContact(kademliaID, ip, port)
 	}
+
 	routingTable := NewRoutingTable(contact)
 
 	fmt.Printf("New node was created with: \n Address: %s\n Contact: %s\n ID: %s\n", contact.Address, contact.String(), contact.ID.String())
@@ -42,6 +43,7 @@ func (kademlia *Kademlia) LookupContact(target *Contact) []Contact {
 func (kademlia *Kademlia) LookupData(hash string) []byte {
 	return kademlia.Storage[hash]
 }
+
 func (kademlia *Kademlia) Store(key string, data []byte) {
 
 	kademlia.Storage[key] = data

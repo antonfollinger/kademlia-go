@@ -1,15 +1,37 @@
 package kademlia
 
 import (
-	"encoding/json"
-	"fmt"
 	"net"
-	"strconv"
 )
 
 type Network struct {
 	Kademlia *Kademlia
-	Conn     *net.UDPConn
+	Addr     string
+	Server   *Server
+	Client   *Client
+}
+
+func initNetwork(k *Kademlia) (*Network, error) {
+
+	n := &Network{Kademlia: k}
+
+	ip := n.GetLocalIP()
+
+	// Client
+	var clientErr error
+	n.Client, clientErr = InitClient(k, ip)
+	if clientErr != nil {
+		return nil, clientErr
+	}
+
+	// Server
+	var serverErr error
+	n.Server, serverErr = InitServer(k, ip)
+	if serverErr != nil {
+		return nil, serverErr
+	}
+
+	return n, nil
 }
 
 func (network *Network) GetLocalIP() string {
@@ -27,6 +49,7 @@ func (network *Network) GetLocalIP() string {
 	return ""
 }
 
+/*
 func Listen(ip string, port int) (*Network, error) {
 	addr, err := net.ResolveUDPAddr("udp", ip+":"+strconv.Itoa(port))
 	if err != nil {
@@ -83,3 +106,4 @@ func (network *Network) SendMessage(contact *Contact, msg *RPCMessage) error {
 
 	return nil
 }
+*/
