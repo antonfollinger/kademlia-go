@@ -10,6 +10,12 @@ type Node struct {
 	Storage      map[string][]byte
 }
 
+type NodeAPI interface {
+	LookupContact(target *Contact)
+	LookupData()
+	Store()
+}
+
 func InitNode(isBootstrap bool, ip string, bootstrapIP string) (*Node, error) {
 
 	var kademliaID *KademliaID
