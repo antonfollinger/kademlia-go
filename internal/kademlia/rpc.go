@@ -1,8 +1,6 @@
 package kademlia
 
 import (
-	"fmt"
-
 	"github.com/google/uuid"
 )
 
@@ -40,6 +38,7 @@ func NewRPCMessage(msgType string, payload Payload /* srcAddr *net.UDPAddr, dstA
 	return newMessage
 }
 
+/*
 func (network *Network) SendPingMessage(msg *RPCMessage) error {
 	// Build payload with my own contact
 	payload := Payload{
@@ -161,3 +160,4 @@ func (network *Network) handleRPC(msg *RPCMessage) {
 	}
 
 }
+*/

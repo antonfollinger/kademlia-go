@@ -1,96 +1,25 @@
-version: "3.9"
-
 services:
   node1:
     build: .
     image: kademlia_node
-    container_name: node1
     environment:
       - PORT=9001
-      - KAD_ID=1010101010101010101010101010101010101010
+      - ISBOOTSTRAP=TRUE
     networks: [testnet]
-
   node2:
     image: kademlia_node
-    container_name: node2
     environment:
       - PORT=9002
-      - KAD_ID=1010101010101010101010101010101010101011
-      - PEER=node1:9001@1010101010101010101010101010101010101010
+      - BOOTSTRAPNODE=node1
+      - ISBOOTSTRAP=FALSE
     networks: [testnet]
-
   node3:
     image: kademlia_node
-    container_name: node3
     environment:
       - PORT=9003
-      - KAD_ID=1010101010101010101010101010101010101100
-      - PEER=node1:9001@1010101010101010101010101010101010101010
+      - BOOTSTRAPNODE=node1
+      - ISBOOTSTRAP=FALSE
     networks: [testnet]
-
-  node4:
-    image: kademlia_node
-    container_name: node4
-    environment:
-      - PORT=9004
-      - KAD_ID=1010101010101010101010101010101010101101
-      - PEER=node1:9001@1010101010101010101010101010101010101010
-    networks: [testnet]
-
-  node5:
-    image: kademlia_node
-    container_name: node5
-    environment:
-      - PORT=9005
-      - KAD_ID=1010101010101010101010101010101010110000
-      - PEER=node1:9001@1010101010101010101010101010101010101010
-    networks: [testnet]
-
-  node6:
-    image: kademlia_node
-    container_name: node6
-    environment:
-      - PORT=9006
-      - KAD_ID=1010101010101010101010101010101010110001
-      - PEER=node1:9001@1010101010101010101010101010101010101010
-    networks: [testnet]
-
-  node7:
-    image: kademlia_node
-    container_name: node7
-    environment:
-      - PORT=9007
-      - KAD_ID=1010101010101010101010101010101010110010
-      - PEER=node1:9001@1010101010101010101010101010101010101010
-    networks: [testnet]
-
-  node8:
-    image: kademlia_node
-    container_name: node8
-    environment:
-      - PORT=9008
-      - KAD_ID=1010101010101010101010101010101010110011
-      - PEER=node1:9001@1010101010101010101010101010101010101010
-    networks: [testnet]
-
-  node9:
-    image: kademlia_node
-    container_name: node9
-    environment:
-      - PORT=9009
-      - KAD_ID=1010101010101010101010101010101010110100
-      - PEER=node1:9001@1010101010101010101010101010101010101010
-    networks: [testnet]
-
-  node10:
-    image: kademlia_node
-    container_name: node10
-    environment:
-      - PORT=9010
-      - KAD_ID=1010101010101010101010101010101010110101
-      - PEER=node1:9001@1010101010101010101010101010101010101010
-    networks: [testnet]
-
 networks:
   testnet:
     driver: bridge

@@ -1,7 +1,6 @@
 package kademlia
 
 import (
-	"encoding/json"
 	"fmt"
 	"net"
 )
@@ -41,11 +40,12 @@ func InitServer(node *Kademlia, ip string) (*Server, error) {
 
 func (s *Server) RunServer() {
 	fmt.Println("Server running...")
-	go s.listen()
-	go s.handleIncoming()
-	go s.respond()
+	//go s.listen()
+	//go s.handleIncoming()
+	//go s.respond()
 }
 
+/*
 func (s *Server) listen() {
 	fmt.Println("Listening...")
 	buf := make([]byte, 4096)
@@ -77,7 +77,7 @@ func (s *Server) handleIncoming() {
 		case "PING":
 			resp = s.handlePing(rpc)
 		default:
-			resp = *CreateRPCMessage("ERROR", Payload{SourceContact: &s.node.RoutingTable.me})
+			resp = *NewRPCMessage("ERROR", Payload{SourceContact: &s.node.RoutingTable.me})
 		}
 		s.outgoing <- resp
 	}
@@ -102,3 +102,4 @@ func (s *Server) handlePing(rpc RPCMessage) RPCMessage {
 
 	return *resp
 }
+*/

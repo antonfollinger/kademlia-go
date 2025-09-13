@@ -11,12 +11,11 @@ type Contact struct {
 	ID       *KademliaID `json:"id"`
 	Address  string      `json:"address"`
 	distance *KademliaID
-	Port     int `json:"port"`
 }
 
 // NewContact returns a new instance of a Contact
-func NewContact(id *KademliaID, address string, port int) Contact {
-	return Contact{id, address, nil, port}
+func NewContact(id *KademliaID, address string) Contact {
+	return Contact{id, address, nil}
 }
 
 // CalcDistance calculates the distance to the target and

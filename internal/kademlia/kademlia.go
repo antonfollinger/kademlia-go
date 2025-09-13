@@ -2,50 +2,58 @@ package kademlia
 
 import (
 	"fmt"
+	"net"
 )
 
 type Kademlia struct {
-	RoutingTable *RoutingTable
-	Network      *Network
-	Storage      map[string][]byte
+	Node   *Node
+	Server *Server
+	Client *Client
 }
 
-func InitKademlia(ip string, port int, bootstrap bool, bootstrapID string) *Kademlia {
-	var kademliaID *KademliaID
-	var contact Contact
+func InitKademlia(port string, bootstrap bool, bootstrapIP string) (*Kademlia, error) {
 
-	if bootstrap {
-		kademliaID = NewKademliaID(bootstrapID)
-		contact = NewContact(kademliaID, ip, port)
-	} else {
-		kademliaID = NewRandomKademliaID()
-		contact = NewContact(kademliaID, ip, port)
+	k := &Kademlia{}
+	ip := GetLocalIP() + ":" + port
+
+	fmt.Println("Local_ip: ", ip)
+	fmt.Println("Bootstrap IP: ", bootstrapIP)
+
+	// Node
+	var nodeErr error
+	k.Node, nodeErr = InitNode(bootstrap, ip, bootstrapIP)
+	if nodeErr != nil {
+		return nil, nodeErr
 	}
 
-	routingTable := NewRoutingTable(contact)
-
-	fmt.Printf("New node was created with: \n Address: %s\n Contact: %s\n ID: %s\n", contact.Address, contact.String(), contact.ID.String())
-
-	return &Kademlia{
-		RoutingTable: routingTable,
-		Storage:      make(map[string][]byte),
+	// Client
+	var clientErr error
+	k.Client, clientErr = InitClient(k, ip)
+	if clientErr != nil {
+		return nil, clientErr
 	}
+
+	// Server
+	var serverErr error
+	k.Server, serverErr = InitServer(k, ip)
+	if serverErr != nil {
+		return nil, serverErr
+	}
+
+	return k, nil
 }
 
-func (kademlia *Kademlia) SetNetworkInterface(network *Network) {
-	kademlia.Network = network
-}
-
-func (kademlia *Kademlia) LookupContact(target *Contact) []Contact {
-	return kademlia.RoutingTable.FindClosestContacts(target.ID, bucketSize)
-}
-
-func (kademlia *Kademlia) LookupData(hash string) []byte {
-	return kademlia.Storage[hash]
-}
-
-func (kademlia *Kademlia) Store(key string, data []byte) {
-
-	kademlia.Storage[key] = data
-	fmt.Printf("Stored data with key %s\n", key)
+func GetLocalIP() string {
+	addrs, err := net.InterfaceAddrs()
+	if err != nil {
+		return ""
+	}
+	for _, address := range addrs {
+		if ipnet, ok := address.(*net.IPNet); ok && !ipnet.IP.IsLoopback() {
+			if ipnet.IP.To4() != nil {
+				return ipnet.IP.String()
+			}
+		}
+	}
+	return ""
 }

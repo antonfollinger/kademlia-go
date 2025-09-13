@@ -1,11 +1,5 @@
 package kademlia
 
-import (
-	"encoding/json"
-	"fmt"
-	"net"
-)
-
 const (
 	ClientBufferSize int = 64
 )
@@ -28,6 +22,7 @@ func InitClient(node *Kademlia, ip string) (*Client, error) {
 	return c, nil
 }
 
+/*
 func (c *Client) SendPingMessage(ip string) error {
 	addr, err := net.ResolveUDPAddr("udp", ip)
 	fmt.Println("addr: ", addr.String())
@@ -71,3 +66,4 @@ func (server *Server) SendFindDataMessage(hash string) {
 func (server *Server) SendStoreMessage(data []byte) {
 	// TODO
 }
+*/

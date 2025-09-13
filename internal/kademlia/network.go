@@ -1,52 +1,6 @@
 package kademlia
 
-import (
-	"net"
-)
-
 type Network struct {
-	Kademlia *Kademlia
-	Addr     string
-	Server   *Server
-	Client   *Client
-}
-
-func initNetwork(k *Kademlia) (*Network, error) {
-
-	n := &Network{Kademlia: k}
-
-	ip := n.GetLocalIP()
-
-	// Client
-	var clientErr error
-	n.Client, clientErr = InitClient(k, ip)
-	if clientErr != nil {
-		return nil, clientErr
-	}
-
-	// Server
-	var serverErr error
-	n.Server, serverErr = InitServer(k, ip)
-	if serverErr != nil {
-		return nil, serverErr
-	}
-
-	return n, nil
-}
-
-func (network *Network) GetLocalIP() string {
-	addrs, err := net.InterfaceAddrs()
-	if err != nil {
-		return ""
-	}
-	for _, address := range addrs {
-		if ipnet, ok := address.(*net.IPNet); ok && !ipnet.IP.IsLoopback() {
-			if ipnet.IP.To4() != nil {
-				return ipnet.IP.String()
-			}
-		}
-	}
-	return ""
 }
 
 /*
