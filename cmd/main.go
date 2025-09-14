@@ -21,7 +21,6 @@ func main() {
 			fmt.Fprintf(os.Stderr, "Failed to initialize Kademlia: %v\n", kadErr)
 			os.Exit(1)
 		}
-		fmt.Println("Starting new bootstrap node!")
 	} else {
 		// Bootstrap Node info
 		bootstrapNode := os.Getenv("BOOTSTRAPNODE")
@@ -36,7 +35,6 @@ func main() {
 			fmt.Fprintf(os.Stderr, "Failed to initialize Kademlia: %v\n", kadErr)
 			os.Exit(1)
 		}
-		fmt.Println("Starting new peer node!")
 	}
 
 	k.Server.RunServer()

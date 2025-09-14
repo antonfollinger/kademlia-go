@@ -18,7 +18,8 @@ type Server struct {
 	outgoing chan RPCMessage
 }
 
-func InitServer(node *Kademlia, ip string) (*Server, error) {
+func InitServer(node NodeAPI) (*Server, error) {
+	ip := node.GetSelfContact().Address
 	udpAddr, err := net.ResolveUDPAddr("udp", ip)
 	if err != nil {
 		return nil, err
@@ -35,19 +36,17 @@ func InitServer(node *Kademlia, ip string) (*Server, error) {
 		incoming: make(chan RPCMessage, IncomingBufferSize),
 		outgoing: make(chan RPCMessage, OutgoingBufferSize),
 	}
-	fmt.Println("Listening on: ", ip)
+	fmt.Println("Server listening on: ", ip)
 	return s, nil
 }
 
 func (s *Server) RunServer() {
-	fmt.Println("Server running...")
 	go s.listen()
 	go s.handleIncoming()
 	go s.respond()
 }
 
 func (s *Server) listen() {
-	fmt.Println("Listening...")
 	buf := make([]byte, 4096)
 	for {
 		n, addr, err := s.conn.ReadFromUDP(buf)
@@ -59,11 +58,8 @@ func (s *Server) listen() {
 		var rpc RPCMessage
 
 		if err := json.Unmarshal(buf[:n], &rpc); err != nil {
+			fmt.Println("Unmarshal error:", err)
 			continue
-		}
-
-		if rpc.Payload.SourceContact.Address == "" {
-			rpc.Payload.SourceContact.Address = addr.String()
 		}
 
 		s.incoming <- rpc
@@ -77,7 +73,7 @@ func (s *Server) handleIncoming() {
 		case "PING":
 			resp = s.handlePing(rpc)
 		default:
-			resp = *NewRPCMessage("ERROR", Payload{}, false)
+			resp = *NewRPCMessage("ERROR: INVALID RPC TYPE", Payload{}, false)
 		}
 		s.outgoing <- resp
 	}

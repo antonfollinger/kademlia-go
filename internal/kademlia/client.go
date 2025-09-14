@@ -5,19 +5,17 @@ const (
 )
 
 type Client struct {
-	node     *Kademlia
-	addr     string
+	node     NodeAPI
 	request  chan string
 	response chan string
 }
 
-func InitClient(node *Kademlia, ip string) (*Client, error) {
+func InitClient(node NodeAPI) (*Client, error) {
 	c := &Client{
 		node:     node,
 		request:  make(chan string, ClientBufferSize),
 		response: make(chan string, ClientBufferSize),
 	}
-	c.addr = ip
 
 	return c, nil
 }

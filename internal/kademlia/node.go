@@ -11,9 +11,11 @@ type Node struct {
 }
 
 type NodeAPI interface {
-	LookupContact(target *Contact)
-	LookupData()
-	Store()
+	GetSelfContact() Contact
+	AddContact(contact Contact)
+	LookupContact(target *Contact) []Contact
+	LookupData(hash string) []byte
+	Store(key string, data []byte)
 }
 
 func InitNode(isBootstrap bool, ip string, bootstrapIP string) (*Node, error) {
@@ -48,6 +50,14 @@ func InitNode(isBootstrap bool, ip string, bootstrapIP string) (*Node, error) {
 	return node, nil
 }
 
+func (node *Node) GetSelfContact() (self Contact) {
+	return node.RoutingTable.me
+}
+
+func (node *Node) AddContact(contact Contact) {
+	node.RoutingTable.AddContact(contact)
+}
+
 func (node *Node) LookupContact(target *Contact) []Contact {
 	return node.RoutingTable.FindClosestContacts(target.ID, bucketSize)
 }
@@ -57,7 +67,6 @@ func (node *Node) LookupData(hash string) []byte {
 }
 
 func (node *Node) Store(key string, data []byte) {
-
 	node.Storage[key] = data
 	fmt.Printf("Stored data with key %s\n", key)
 }
