@@ -1,5 +1,7 @@
 package kademlia
 
+import "fmt"
+
 const (
 	ClientBufferSize int = 64
 )
@@ -20,16 +22,15 @@ func InitClient(node NodeAPI) (*Client, error) {
 	return c, nil
 }
 
-/*
-func (network *Network) SendPingMessage(msg *RPCMessage) error {
+func (client *Client) SendPingMessage(msg *RPCMessage) error {
 	// Build payload with my own contact
 	payload := Payload{
-		SourceContact: &network.Kademlia.RoutingTable.me,
+		SourceContact: client.node.GetSelfContact(),
 	}
 
 	if msg.Query {
 		if msg.Payload.SourceContact != nil {
-			network.Kademlia.RoutingTable.AddContact(*msg.Payload.SourceContact)
+			client.node.AddContact(msg.Payload.SourceContact)
 			reply := NewRPCMessage("PING", payload, false)
 			reply.PacketID = msg.PacketID // match request ID
 			fmt.Printf("Got PING from %s:%d (ID=%s, PacketID=%s)\n",
@@ -37,11 +38,11 @@ func (network *Network) SendPingMessage(msg *RPCMessage) error {
 				msg.Payload.SourceContact.Port,
 				msg.Payload.SourceContact.ID.String(),
 				msg.PacketID)
-			_ = network.SendMessage(msg.Payload.SourceContact, reply)
+			_ = client.SendMessage(msg.Payload.SourceContact, reply)
 		}
 	} else {
 		if msg.Payload.SourceContact != nil {
-			network.Kademlia.RoutingTable.AddContact(*msg.Payload.SourceContact)
+			client.node.AddContact(msg.Payload.SourceContact)
 			fmt.Printf("Got PONG from %s:%d (ID=%s, PacketID=%s)\n",
 				msg.Payload.SourceContact.Address,
 				msg.Payload.SourceContact.Port,
@@ -53,71 +54,70 @@ func (network *Network) SendPingMessage(msg *RPCMessage) error {
 	return nil
 }
 
-func (network *Network) SendFindContactMessage(msg *RPCMessage) {
+func (client *Client) SendFindContactMessage(msg *RPCMessage) {
 	if msg.Query {
-		contacts := network.Kademlia.RoutingTable.FindClosestContacts(msg.Payload.TargetContact.ID, 8)
+		contacts := client.node.LookupContact(msg.Payload.TargetContact)
 
 		payload := Payload{
 			Contacts:      contacts,
-			SourceContact: &network.Kademlia.RoutingTable.me,
+			SourceContact: client.node.GetSelfContact(),
 		}
 		reply := NewRPCMessage("FIND_NODE", payload, false)
 		reply.PacketID = msg.PacketID // preserve request ID
 
 		if msg.Payload.SourceContact != nil {
-			_ = network.SendMessage(msg.Payload.SourceContact, reply)
+			_ = client.SendMessage(msg.Payload.SourceContact, reply)
 		}
 	} else {
 		if msg.Payload.SourceContact != nil {
-			network.Kademlia.RoutingTable.AddContact(*msg.Payload.SourceContact)
+			client.Kademlia.RoutingTable.AddContact(*msg.Payload.SourceContact)
 		}
 
 		if msg.Payload.Contacts != nil {
 			fmt.Printf("Got FIND_NODE response with %d contacts (PacketID=%s)\n",
 				len(msg.Payload.Contacts), msg.PacketID)
 			for _, contact := range msg.Payload.Contacts {
-				network.Kademlia.RoutingTable.AddContact(contact)
+				client.Kademlia.RoutingTable.AddContact(contact)
 			}
 		}
 	}
 }
 
-func (network *Network) SendStoreMessage(msg *RPCMessage) {
+func (client *Client) SendStoreMessage(msg *RPCMessage) {
 	if msg.Query {
-		network.Kademlia.Store(msg.Payload.Key, msg.Payload.Data)
+		client.Kademlia.Store(msg.Payload.Key, msg.Payload.Data)
 
 		payload := Payload{
-			SourceContact: &network.Kademlia.RoutingTable.me,
+			SourceContact: client.node.GetSelfContact(),
 		}
 		msgout := NewRPCMessage("STORE", payload, false)
-		network.SendMessage(msg.Payload.SourceContact, msgout)
+		client.SendMessage(msg.Payload.SourceContact, msgout)
 
 	} else {
 		if msg.Payload.SourceContact != nil {
-			network.Kademlia.RoutingTable.AddContact(*msg.Payload.SourceContact)
+			client.node.AddContact(msg.Payload.SourceContact)
 
-			network.Kademlia.RoutingTable.AddContact(*msg.Payload.SourceContact)
+			client.node.AddContact(msg.Payload.SourceContact)
 			fmt.Printf("Got STORE ACK from %s:%d (ID=%s, PacketID=%s)\n",
 				msg.Payload.SourceContact.Address,
-				msg.Payload.SourceContact.Port,
 				msg.Payload.SourceContact.ID.String(),
 				msg.PacketID)
-			network.Kademlia.RoutingTable.AddContact(*msg.Payload.SourceContact)
+			client.node.AddContact(msg.Payload.SourceContact)
 		}
 	}
 
 }
 
-func (network *Network) SendFindValueMessage(msg *RPCMessage) {
+func (client *Client) SendFindValueMessage(msg *RPCMessage) {
 	if msg.Query {
 		payload := Payload{
-			Data:          network.Kademlia.LookupData(msg.Payload.Key),
-			SourceContact: &network.Kademlia.RoutingTable.me,
+			Data:          client.Kademlia.LookupData(msg.Payload.Key),
+			SourceContact: client.node.GetSelfContact(),
 		}
 		msgout := NewRPCMessage("FIND_VALUE", payload, false)
-		network.SendMessage(msg.Payload.SourceContact, msgout)
+		client.SendMessage(msg.Payload.SourceContact, msgout)
 	} else {
-		network.Kademlia.RoutingTable.AddContact(*msg.Payload.SourceContact)
+		client.node.AddContact(msg.Payload.SourceContact)
 
 		if msg.Payload.Data != nil {
 			fmt.Printf("Got FIND_VALUE response with data: %s (PacketID=%s)\n",
@@ -127,21 +127,20 @@ func (network *Network) SendFindValueMessage(msg *RPCMessage) {
 	}
 }
 
-func (network *Network) handleRPC(msg *RPCMessage) {
+func (client *Client) handleRPC(msg *RPCMessage) {
 	switch msg.Type {
 	case "PING":
-		network.SendPingMessage(msg)
+		client.SendPingMessage(msg)
 	case "FIND_NODE":
-		network.SendFindContactMessage(msg)
+		client.SendFindContactMessage(msg)
 	case "STORE":
-		network.SendStoreMessage(msg)
+		client.SendStoreMessage(msg)
 	case "FIND_VALUE":
-		network.SendFindValueMessage(msg)
+		client.SendFindValueMessage(msg)
 	default:
 		fmt.Println("Unknown RPC message type:", msg.Type)
 	}
 }
-*/
 
 /*
 func (c *Client) SendPingMessage(ip string) error {

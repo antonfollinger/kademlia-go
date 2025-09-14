@@ -73,7 +73,7 @@ func (s *Server) handleIncoming() {
 		case "PING":
 			resp = s.handlePing(rpc)
 		default:
-			resp = *NewRPCMessage("ERROR: INVALID RPC TYPE", Payload{}, false)
+			resp = *NewRPCMessage("ERROR", Payload{SourceContact: rpc.Payload.SourceContact}, false)
 		}
 		s.outgoing <- resp
 	}

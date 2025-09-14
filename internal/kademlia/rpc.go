@@ -6,8 +6,8 @@ import (
 
 type Payload struct {
 	Contacts      []Contact `json:"contacts,omitempty"`
-	SourceContact *Contact  `json:"src_contact,omitempty"`
-	TargetContact *Contact  `json:"dst_contact,omitempty"`
+	SourceContact Contact   `json:"src_contact,omitempty"`
+	TargetContact Contact   `json:"trgt_contact,omitempty"`
 	Key           string    `json:"key,omitempty"`
 	Data          []byte    `json:"data,omitempty"`
 	Error         string    `json:"error,omitempty"`
