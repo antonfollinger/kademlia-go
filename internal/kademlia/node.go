@@ -13,7 +13,7 @@ type Node struct {
 type NodeAPI interface {
 	GetSelfContact() Contact
 	AddContact(contact Contact)
-	LookupContact(target *Contact) []Contact
+	LookupContact(target Contact) []Contact
 	LookupData(hash string) []byte
 	Store(key string, data []byte)
 }
@@ -58,7 +58,7 @@ func (node *Node) AddContact(contact Contact) {
 	node.RoutingTable.AddContact(contact)
 }
 
-func (node *Node) LookupContact(target *Contact) []Contact {
+func (node *Node) LookupContact(target Contact) []Contact {
 	return node.RoutingTable.FindClosestContacts(target.ID, bucketSize)
 }
 

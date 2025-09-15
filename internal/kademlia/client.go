@@ -35,7 +35,6 @@ func (client *Client) SendPingMessage(msg *RPCMessage) error {
 			reply.PacketID = msg.PacketID // match request ID
 			fmt.Printf("Got PING from %s:%d (ID=%s, PacketID=%s)\n",
 				msg.Payload.SourceContact.Address,
-				msg.Payload.SourceContact.Port,
 				msg.Payload.SourceContact.ID.String(),
 				msg.PacketID)
 			_ = client.SendMessage(msg.Payload.SourceContact, reply)
@@ -45,7 +44,6 @@ func (client *Client) SendPingMessage(msg *RPCMessage) error {
 			client.node.AddContact(msg.Payload.SourceContact)
 			fmt.Printf("Got PONG from %s:%d (ID=%s, PacketID=%s)\n",
 				msg.Payload.SourceContact.Address,
-				msg.Payload.SourceContact.Port,
 				msg.Payload.SourceContact.ID.String(),
 				msg.PacketID)
 		}
@@ -70,14 +68,14 @@ func (client *Client) SendFindContactMessage(msg *RPCMessage) {
 		}
 	} else {
 		if msg.Payload.SourceContact != nil {
-			client.Kademlia.RoutingTable.AddContact(*msg.Payload.SourceContact)
+			client.node.AddContact(msg.Payload.SourceContact)
 		}
 
 		if msg.Payload.Contacts != nil {
 			fmt.Printf("Got FIND_NODE response with %d contacts (PacketID=%s)\n",
 				len(msg.Payload.Contacts), msg.PacketID)
 			for _, contact := range msg.Payload.Contacts {
-				client.Kademlia.RoutingTable.AddContact(contact)
+				client.node.AddContact(contact)
 			}
 		}
 	}
@@ -85,7 +83,7 @@ func (client *Client) SendFindContactMessage(msg *RPCMessage) {
 
 func (client *Client) SendStoreMessage(msg *RPCMessage) {
 	if msg.Query {
-		client.Kademlia.Store(msg.Payload.Key, msg.Payload.Data)
+		client.node.Store(msg.Payload.Key, msg.Payload.Data)
 
 		payload := Payload{
 			SourceContact: client.node.GetSelfContact(),
@@ -111,7 +109,7 @@ func (client *Client) SendStoreMessage(msg *RPCMessage) {
 func (client *Client) SendFindValueMessage(msg *RPCMessage) {
 	if msg.Query {
 		payload := Payload{
-			Data:          client.Kademlia.LookupData(msg.Payload.Key),
+			Data:          client.node.LookupData(msg.Payload.Key),
 			SourceContact: client.node.GetSelfContact(),
 		}
 		msgout := NewRPCMessage("FIND_VALUE", payload, false)
