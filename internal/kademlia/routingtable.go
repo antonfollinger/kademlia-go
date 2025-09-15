@@ -90,7 +90,7 @@ func (routingTable *RoutingTable) Print() {
 			fmt.Printf("Bucket %d:\n", i)
 			for e := bucket.list.Front(); e != nil; e = e.Next() {
 				contact := e.Value.(Contact)
-				fmt.Printf("  %s:%d ID: %s\n", contact.Address, contact.Port, contact.ID.String())
+				fmt.Printf("  %s:%d ID: %s\n", contact.Address, contact.ID.String())
 			}
 		}
 	}
