@@ -67,12 +67,19 @@ func (node *Node) AddContact(contact Contact) {
 		node.RoutingTable.AddContact(contact)
 	} else {
 		// Ping last indexed contact
+		lastContactElem := bucket.list.Back()
+		lastContact := lastContactElem.Value.(Contact)
+		resp, err := node.Client.SendPingMessage(lastContact)
 
-		// if response
-		//// forget new contact
-		// else
-		//// Remove last contact
-		//// Add new contact
+		if err == nil && resp.Type == "PONG" {
+			// Last contact responded, do not add new contact
+			fmt.Printf("Contact %s responded to ping, not adding new contact %s\n", lastContact.String(), contact.String())
+		} else {
+			// Last contact did not respond, remove and add new contact
+			bucket.list.Remove(lastContactElem)
+			node.RoutingTable.AddContact(contact)
+			fmt.Printf("Contact %s did not respond, replaced with new contact %s\n", lastContact.String(), contact.String())
+		}
 	}
 }
 
