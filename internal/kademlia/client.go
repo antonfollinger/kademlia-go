@@ -101,6 +101,7 @@ func (client *Client) SendPingMessage(target Contact) (RPCMessage, error) {
 	select {
 	case resp := <-respChan:
 		fmt.Println("Response received")
+		fmt.Printf("RPC INFO: %+v\n\n", resp)
 		return resp, nil
 	case <-time.After(2 * time.Second):
 		return RPCMessage{}, fmt.Errorf("PING Timeout")
