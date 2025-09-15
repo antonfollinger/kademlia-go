@@ -17,6 +17,10 @@ type Client struct {
 	activePkgIDs []string
 }
 
+type ClientAPI interface {
+	SendPingMessage(target Contact) error
+}
+
 func InitClient(node NodeAPI) (*Client, error) {
 	c := &Client{
 		node:         node,

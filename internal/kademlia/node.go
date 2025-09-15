@@ -8,6 +8,7 @@ type Node struct {
 	Id           *KademliaID
 	RoutingTable *RoutingTable
 	Storage      map[string][]byte
+	Client       ClientAPI
 }
 
 type NodeAPI interface {
@@ -48,6 +49,10 @@ func InitNode(isBootstrap bool, ip string, bootstrapIP string) (*Node, error) {
 	}
 
 	return node, nil
+}
+
+func (node *Node) SetClient(client ClientAPI) {
+	node.Client = client
 }
 
 func (node *Node) GetSelfContact() (self Contact) {

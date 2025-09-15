@@ -40,6 +40,8 @@ func InitKademlia(port string, bootstrap bool, bootstrapIP string) (*Kademlia, e
 		return nil, serverErr
 	}
 
+	k.Node.SetClient(k.Client)
+
 	return k, nil
 }
 
