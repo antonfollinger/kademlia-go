@@ -20,6 +20,7 @@ type ClientAPI interface {
 
 func InitClient(node NodeAPI) (*Client, error) {
 
+	// Create connection with ephemeral port
 	conn, err := net.ListenUDP("udp", nil)
 	if err != nil {
 		return nil, err
@@ -98,6 +99,7 @@ func (client *Client) SendPingMessage(target Contact) (RPCMessage, error) {
 		return RPCMessage{}, err
 	}
 
+	// Wait for response
 	select {
 	case resp := <-respChan:
 		fmt.Println("Response received")
