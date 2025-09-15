@@ -94,16 +94,17 @@ func main() {
 				}
 				time.Sleep(10 * time.Second)
 			}
-
-			// Step 2: After delay, send a single FIND_NODE(self) to bootstrap
-			time.Sleep(5 * time.Second)
-			for _, c := range initialPeers {
-				findNode := kademlia.NewRPCMessage("FIND_NODE", kademlia.Payload{
-					TargetContact: &me,
-					SourceContact: &me,
-				}, true)
-				_ = node.Network.SendMessage(&c, findNode)
-				fmt.Printf("Sent FIND_NODE(self) to %s:%d (ID=%s)\n", c.Address, c.Port, c.ID)
+			if os.Getenv("KAD_ID") == "1010101010101010101010101010101010110000" {
+				// Step 2: After delay, send a single FIND_NODE(self) to bootstrap
+				time.Sleep(5 * time.Second)
+				for _, c := range initialPeers {
+					findNode := kademlia.NewRPCMessage("FIND_NODE", kademlia.Payload{
+						TargetContact: &me,
+						SourceContact: &me,
+					}, true)
+					_ = node.Network.SendMessage(&c, findNode)
+					fmt.Printf("Sent FIND_NODE(self) to %s:%d (ID=%s)\n", c.Address, c.Port, c.ID)
+				}
 			}
 
 			// Step 3: Wait a bit for response, then dump routing table once
