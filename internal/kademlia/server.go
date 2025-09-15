@@ -62,6 +62,7 @@ func (s *Server) listen() {
 			continue
 		}
 		if rpc.Query {
+			fmt.Printf("RPC INFO: %+v\n", rpc)
 			s.incoming <- rpc
 		}
 	}
@@ -91,7 +92,7 @@ func (s *Server) respond() {
 }
 
 func (s *Server) handlePing(rpc RPCMessage) RPCMessage {
-	resp := NewRPCMessage("OK", Payload{SourceContact: rpc.Payload.SourceContact}, false)
+	resp := NewRPCMessage("PONG", Payload{SourceContact: rpc.Payload.SourceContact}, false)
 
 	// Ensure same PID
 	PID := rpc.PacketID

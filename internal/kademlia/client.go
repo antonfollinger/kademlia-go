@@ -35,10 +35,17 @@ func (client *Client) RunClient() {
 }
 */
 
+func (client *Client) HandleRequests() {
+
+}
+
+func (client *Client) HandleResponse() {
+
+}
+
 func (client *Client) SendMessage(target Contact, msg *RPCMessage) error {
 	client.activePkgIDs = append(client.activePkgIDs, msg.PacketID)
 
-	// Add your message sending logic here
 	// Marshal RPCMessage into JSON
 	data, err := json.Marshal(msg)
 	if err != nil {
@@ -53,7 +60,7 @@ func (client *Client) SendMessage(target Contact, msg *RPCMessage) error {
 
 	// Dial UDP
 	conn, err := net.DialUDP("udp", nil, addr)
-	fmt.Println("conn: ", conn.LocalAddr())
+	fmt.Println("Client conn: ", conn.LocalAddr())
 	if err != nil {
 		fmt.Println("Dial error: ", err)
 		return err
@@ -61,7 +68,7 @@ func (client *Client) SendMessage(target Contact, msg *RPCMessage) error {
 	defer conn.Close()
 
 	// Send JSON bytes
-	_, err = conn.WriteToUDP(data, addr)
+	_, err = conn.Write(data)
 	if err != nil {
 		return fmt.Errorf("failed to send UDP message: %w", err)
 	}
@@ -78,6 +85,7 @@ func (client *Client) SendPingMessage(target Contact) error {
 
 	if target != (Contact{}) {
 		request := NewRPCMessage("PING", payload, true)
+		fmt.Println("Sending ping...")
 		client.SendMessage(target, request)
 	} else {
 		return fmt.Errorf("NO TARGET")
