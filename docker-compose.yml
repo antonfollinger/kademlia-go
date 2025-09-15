@@ -13,13 +13,6 @@ services:
       - BOOTSTRAPNODE=node1
       - ISBOOTSTRAP=FALSE
     networks: [testnet]
-  node3:
-    image: kademlia_node
-    environment:
-      - PORT=9003
-      - BOOTSTRAPNODE=node1
-      - ISBOOTSTRAP=FALSE
-    networks: [testnet]
 networks:
   testnet:
     driver: bridge

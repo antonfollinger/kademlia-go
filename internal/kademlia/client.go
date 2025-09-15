@@ -4,98 +4,107 @@ import (
 	"encoding/json"
 	"fmt"
 	"net"
-)
-
-const (
-	ClientBufferSize int = 64
+	"sync"
+	"time"
 )
 
 type Client struct {
-	node         NodeAPI
-	request      chan string
-	response     chan string
-	activePkgIDs []string
+	node    NodeAPI
+	conn    *net.UDPConn
+	pending sync.Map
 }
 
 type ClientAPI interface {
-	SendPingMessage(target Contact) error
+	SendPingMessage(target Contact) (RPCMessage, error)
 }
 
 func InitClient(node NodeAPI) (*Client, error) {
-	c := &Client{
-		node:         node,
-		request:      make(chan string, ClientBufferSize),
-		response:     make(chan string, ClientBufferSize),
-		activePkgIDs: make([]string, 0),
+
+	conn, err := net.ListenUDP("udp", nil)
+	if err != nil {
+		return nil, err
 	}
+
+	c := &Client{
+		node: node,
+		conn: conn,
+	}
+
+	fmt.Println("Client listening on: ", conn.LocalAddr())
+
+	go c.listen()
 
 	return c, nil
 }
 
-/*
-func (client *Client) RunClient() {
-	//go client.HandleRequests()
-	//go client.HandleResponse()
-}
-*/
+func (client *Client) listen() {
+	buf := make([]byte, 4096)
+	for {
+		n, addr, err := client.conn.ReadFromUDP(buf)
+		if err != nil {
+			continue
+		}
+		fmt.Printf("Client found RPC from %v, bytes read: %d\n\n", addr, n)
+		var resp RPCMessage
+		if err := json.Unmarshal(buf[:n], &resp); err != nil {
+			continue
+		}
 
-func (client *Client) HandleRequests() {
-
-}
-
-func (client *Client) HandleResponse() {
-
-}
-
-func (client *Client) SendMessage(target Contact, msg *RPCMessage) error {
-	client.activePkgIDs = append(client.activePkgIDs, msg.PacketID)
-
-	// Marshal RPCMessage into JSON
-	data, err := json.Marshal(msg)
-	if err != nil {
-		return fmt.Errorf("failed to marshal RPCMessage: %w", err)
+		if ch, ok := client.pending.Load(resp.PacketID); ok {
+			ch.(chan RPCMessage) <- resp
+			client.pending.Delete(resp.PacketID)
+		}
 	}
+}
+
+func (client *Client) SendMessage(target Contact, msg *RPCMessage) (chan RPCMessage, error) {
 
 	// Build UDP address from Contact
 	addr, err := net.ResolveUDPAddr("udp", target.Address)
 	if err != nil {
-		return fmt.Errorf("failed to resolve UDP addr: %w", err)
+		return nil, fmt.Errorf("failed to resolve UDP addr: %w", err)
 	}
 
-	// Dial UDP
-	conn, err := net.DialUDP("udp", nil, addr)
-	fmt.Println("Client conn: ", conn.LocalAddr())
+	// Create response channel for this request
+	respChan := make(chan RPCMessage, 1)
+	client.pending.Store(msg.PacketID, respChan)
+
+	// Marshal RPCMessage into JSON
+	data, err := json.Marshal(msg)
 	if err != nil {
-		fmt.Println("Dial error: ", err)
-		return err
+		return nil, fmt.Errorf("failed to marshal RPCMessage: %w", err)
 	}
-	defer conn.Close()
 
 	// Send JSON bytes
-	_, err = conn.Write(data)
+	_, err = client.conn.WriteToUDP(data, addr)
 	if err != nil {
-		return fmt.Errorf("failed to send UDP message: %w", err)
+		return nil, fmt.Errorf("failed to send UDP message: %w", err)
 	}
 
-	return nil
+	return respChan, nil
 }
 
-func (client *Client) SendPingMessage(target Contact) error {
+func (client *Client) SendPingMessage(target Contact) (RPCMessage, error) {
 	// Build payload with my own contact
 	payload := Payload{
 		SourceContact: client.node.GetSelfContact(),
 		TargetContact: target,
 	}
 
-	if target != (Contact{}) {
-		request := NewRPCMessage("PING", payload, true)
-		fmt.Println("Sending ping...")
-		client.SendMessage(target, request)
-	} else {
-		return fmt.Errorf("NO TARGET")
+	request := NewRPCMessage("PING", payload, true)
+	fmt.Println("Sending ping...")
+	respChan, err := client.SendMessage(target, request)
+	if err != nil {
+		return RPCMessage{}, err
 	}
 
-	return nil
+	select {
+	case resp := <-respChan:
+		fmt.Println("Response received")
+		return resp, nil
+	case <-time.After(2 * time.Second):
+		return RPCMessage{}, fmt.Errorf("PING Timeout")
+	}
 }
 
 /*

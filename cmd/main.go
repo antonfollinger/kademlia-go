@@ -44,7 +44,7 @@ func main() {
 	if isBootstrap == "FALSE" {
 		time.Sleep(2 * time.Second)
 		bootstrapContact := kademlia.NewContact(kademlia.NewKademliaID("0000000000000000000000000000000000000000"), bootstrapIP)
-		err := k.Client.SendPingMessage(bootstrapContact)
+		_, err := k.Client.SendPingMessage(bootstrapContact)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Failed to ping bootstrap node: %v\n", err)
 		} else {

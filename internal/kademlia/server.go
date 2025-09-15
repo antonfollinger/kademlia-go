@@ -6,6 +6,16 @@ import (
 	"net"
 )
 
+type IncomingRPC struct {
+	RPC  RPCMessage
+	Addr *net.UDPAddr
+}
+
+type OutgoingRPC struct {
+	RPC  RPCMessage
+	Addr *net.UDPAddr
+}
+
 const (
 	IncomingBufferSize int = 4096
 	OutgoingBufferSize int = 1024
@@ -14,8 +24,8 @@ const (
 type Server struct {
 	node     NodeAPI
 	conn     *net.UDPConn
-	incoming chan RPCMessage
-	outgoing chan RPCMessage
+	incoming chan IncomingRPC
+	outgoing chan OutgoingRPC
 }
 
 func InitServer(node NodeAPI) (*Server, error) {
@@ -33,8 +43,8 @@ func InitServer(node NodeAPI) (*Server, error) {
 	s := &Server{
 		node:     node,
 		conn:     conn,
-		incoming: make(chan RPCMessage, IncomingBufferSize),
-		outgoing: make(chan RPCMessage, OutgoingBufferSize),
+		incoming: make(chan IncomingRPC, IncomingBufferSize),
+		outgoing: make(chan OutgoingRPC, OutgoingBufferSize),
 	}
 	fmt.Println("Server listening on: ", ip)
 	return s, nil
@@ -54,7 +64,7 @@ func (s *Server) listen() {
 			fmt.Println("listen error:", err)
 			continue
 		}
-		fmt.Printf("Found RPC from %v, bytes read: %d\n", addr, n)
+		fmt.Printf("Server found RPC from %v, bytes read: %d\n\n", addr, n)
 		var rpc RPCMessage
 
 		if err := json.Unmarshal(buf[:n], &rpc); err != nil {
@@ -62,32 +72,31 @@ func (s *Server) listen() {
 			continue
 		}
 		if rpc.Query {
-			fmt.Printf("RPC INFO: %+v\n", rpc)
-			s.incoming <- rpc
+			fmt.Printf("RPC INFO: %+v\n\n", rpc)
+			s.incoming <- IncomingRPC{RPC: rpc, Addr: addr}
 		}
 	}
 }
 
 func (s *Server) handleIncoming() {
-	for rpc := range s.incoming {
+	for in := range s.incoming {
 		var resp RPCMessage
-		switch rpc.Type {
+		switch in.RPC.Type {
 		case "PING":
-			resp = s.handlePing(rpc)
+			resp = s.handlePing(in.RPC)
 		default:
-			resp = *NewRPCMessage("ERROR", Payload{SourceContact: rpc.Payload.SourceContact}, false)
+			resp = *NewRPCMessage("ERROR", Payload{SourceContact: in.RPC.Payload.SourceContact}, false)
 		}
-		s.outgoing <- resp
+		s.outgoing <- OutgoingRPC{RPC: resp, Addr: in.Addr}
 	}
 }
 
 func (s *Server) respond() {
 	for {
-		rpc := <-s.outgoing
-		target := rpc.Payload.SourceContact.Address // must carry destination
-		data, _ := json.Marshal(rpc)
-		addr, _ := net.ResolveUDPAddr("udp", target)
-		_, _ = s.conn.WriteToUDP(data, addr)
+		out := <-s.outgoing
+		fmt.Println("Responding to:", out.Addr)
+		data, _ := json.Marshal(out.RPC)
+		_, _ = s.conn.WriteToUDP(data, out.Addr)
 	}
 }
 
