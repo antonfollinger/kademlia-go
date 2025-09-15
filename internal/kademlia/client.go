@@ -1,57 +1,92 @@
 package kademlia
 
-import "fmt"
+import (
+	"encoding/json"
+	"fmt"
+	"net"
+)
 
 const (
 	ClientBufferSize int = 64
 )
 
 type Client struct {
-	node     NodeAPI
-	request  chan string
-	response chan string
+	node         NodeAPI
+	request      chan string
+	response     chan string
+	activePkgIDs []string
 }
 
 func InitClient(node NodeAPI) (*Client, error) {
 	c := &Client{
-		node:     node,
-		request:  make(chan string, ClientBufferSize),
-		response: make(chan string, ClientBufferSize),
+		node:         node,
+		request:      make(chan string, ClientBufferSize),
+		response:     make(chan string, ClientBufferSize),
+		activePkgIDs: make([]string, 0),
 	}
 
 	return c, nil
 }
 
-func (client *Client) SendPingMessage(msg *RPCMessage) error {
-	// Build payload with my own contact
-	payload := Payload{
-		SourceContact: client.node.GetSelfContact(),
+/*
+func (client *Client) RunClient() {
+	//go client.HandleRequests()
+	//go client.HandleResponse()
+}
+*/
+
+func (client *Client) SendMessage(target Contact, msg *RPCMessage) error {
+	client.activePkgIDs = append(client.activePkgIDs, msg.PacketID)
+
+	// Add your message sending logic here
+	// Marshal RPCMessage into JSON
+	data, err := json.Marshal(msg)
+	if err != nil {
+		return fmt.Errorf("failed to marshal RPCMessage: %w", err)
 	}
 
-	if msg.Query {
-		if msg.Payload.SourceContact != nil {
-			client.node.AddContact(msg.Payload.SourceContact)
-			reply := NewRPCMessage("PING", payload, false)
-			reply.PacketID = msg.PacketID // match request ID
-			fmt.Printf("Got PING from %s:%d (ID=%s, PacketID=%s)\n",
-				msg.Payload.SourceContact.Address,
-				msg.Payload.SourceContact.ID.String(),
-				msg.PacketID)
-			_ = client.SendMessage(msg.Payload.SourceContact, reply)
-		}
-	} else {
-		if msg.Payload.SourceContact != nil {
-			client.node.AddContact(msg.Payload.SourceContact)
-			fmt.Printf("Got PONG from %s:%d (ID=%s, PacketID=%s)\n",
-				msg.Payload.SourceContact.Address,
-				msg.Payload.SourceContact.ID.String(),
-				msg.PacketID)
-		}
+	// Build UDP address from Contact
+	addr, err := net.ResolveUDPAddr("udp", target.Address)
+	if err != nil {
+		return fmt.Errorf("failed to resolve UDP addr: %w", err)
+	}
+
+	// Dial UDP
+	conn, err := net.DialUDP("udp", nil, addr)
+	fmt.Println("conn: ", conn.LocalAddr())
+	if err != nil {
+		fmt.Println("Dial error: ", err)
+		return err
+	}
+	defer conn.Close()
+
+	// Send JSON bytes
+	_, err = conn.WriteToUDP(data, addr)
+	if err != nil {
+		return fmt.Errorf("failed to send UDP message: %w", err)
 	}
 
 	return nil
 }
 
+func (client *Client) SendPingMessage(target Contact) error {
+	// Build payload with my own contact
+	payload := Payload{
+		SourceContact: client.node.GetSelfContact(),
+		TargetContact: target,
+	}
+
+	if target != (Contact{}) {
+		request := NewRPCMessage("PING", payload, true)
+		client.SendMessage(target, request)
+	} else {
+		return fmt.Errorf("NO TARGET")
+	}
+
+	return nil
+}
+
+/*
 func (client *Client) SendFindContactMessage(msg *RPCMessage) {
 	if msg.Query {
 		contacts := client.node.LookupContact(msg.Payload.TargetContact)
@@ -125,6 +160,7 @@ func (client *Client) SendFindValueMessage(msg *RPCMessage) {
 	}
 }
 
+// For CLI implementation
 func (client *Client) handleRPC(msg *RPCMessage) {
 	switch msg.Type {
 	case "PING":

@@ -55,7 +55,20 @@ func (node *Node) GetSelfContact() (self Contact) {
 }
 
 func (node *Node) AddContact(contact Contact) {
-	node.RoutingTable.AddContact(contact)
+
+	bucket := node.RoutingTable.buckets[node.RoutingTable.getBucketIndex(contact.ID)]
+
+	if bucket.Len() < bucketSize {
+		node.RoutingTable.AddContact(contact)
+	} else {
+		// Ping last indexed contact
+
+		// if response
+		//// forget new contact
+		// else
+		//// Remove last contact
+		//// Add new contact
+	}
 }
 
 func (node *Node) LookupContact(target Contact) []Contact {

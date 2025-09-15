@@ -61,8 +61,9 @@ func (s *Server) listen() {
 			fmt.Println("Unmarshal error:", err)
 			continue
 		}
-
-		s.incoming <- rpc
+		if rpc.Query {
+			s.incoming <- rpc
+		}
 	}
 }
 

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net"
 	"os"
+	"time"
 
 	"github.com/antonfollinger/kademlia_go/internal/kademlia"
 )
@@ -14,6 +15,7 @@ func main() {
 
 	var k *kademlia.Kademlia
 	var kadErr error
+	var bootstrapIP string
 
 	if isBootstrap == "TRUE" {
 		k, kadErr = kademlia.InitKademlia(port, true, "")
@@ -28,7 +30,7 @@ func main() {
 		if IPerr != nil {
 			fmt.Println("LookupIP error", IPerr)
 		}
-		bootstrapIP := bootStrapAddr[0].String() + ":" + "9001"
+		bootstrapIP = bootStrapAddr[0].String() + ":" + "9001"
 
 		k, kadErr = kademlia.InitKademlia(port, false, bootstrapIP)
 		if kadErr != nil {
@@ -38,6 +40,17 @@ func main() {
 	}
 
 	k.Server.RunServer()
+
+	if isBootstrap == "FALSE" {
+		time.Sleep(2 * time.Second)
+		bootstrapContact := kademlia.NewContact(kademlia.NewKademliaID("0000000000000000000000000000000000000000"), bootstrapIP)
+		err := k.Client.SendPingMessage(bootstrapContact)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Failed to ping bootstrap node: %v\n", err)
+		} else {
+			fmt.Println("Sent ping to: ", bootstrapContact)
+		}
+	}
 
 	select {} // keep running
 }

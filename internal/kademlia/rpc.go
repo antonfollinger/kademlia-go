@@ -20,7 +20,7 @@ type RPCMessage struct {
 	Query    bool    `json:"query"`     // Is this message a query (request) or a response
 }
 
-func NewRPCMessage(msgType string, payload Payload /* srcAddr *net.UDPAddr, dstAddr *net.UDPAddr, */, query bool) *RPCMessage {
+func NewRPCMessage(msgType string, payload Payload, query bool) *RPCMessage {
 	newMessage := &RPCMessage{
 		Type:     msgType,
 		PacketID: uuid.New().String(),
