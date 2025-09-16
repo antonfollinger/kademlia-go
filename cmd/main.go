@@ -24,11 +24,21 @@ func main() {
 			os.Exit(1)
 		}
 	} else {
-		// Bootstrap Node info
+		// Bootstrap Node info with retry
 		bootstrapNode := os.Getenv("BOOTSTRAPNODE")
-		bootStrapAddr, IPerr := net.LookupIP(bootstrapNode)
-		if IPerr != nil {
-			fmt.Println("LookupIP error", IPerr)
+		var bootStrapAddr []net.IP
+		var IPerr error
+		for i := 0; i < 5; i++ {
+			bootStrapAddr, IPerr = net.LookupIP(bootstrapNode)
+			if IPerr == nil && len(bootStrapAddr) > 0 {
+				break
+			}
+			fmt.Printf("LookupIP error (attempt %d): %v\n", i+1, IPerr)
+			time.Sleep(2 * time.Second)
+		}
+		if IPerr != nil || len(bootStrapAddr) == 0 {
+			fmt.Fprintf(os.Stderr, "Failed to resolve bootstrap node after retries: %v\n", IPerr)
+			os.Exit(1)
 		}
 		bootstrapIP = bootStrapAddr[0].String() + ":" + "9001"
 

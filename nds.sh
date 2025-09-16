@@ -15,6 +15,7 @@ for i in $(seq 1 $NODE_COUNT); do
     echo "    environment:" >> docker-compose.yml
     echo "      - PORT=9001" >> docker-compose.yml
     echo "      - ISBOOTSTRAP=TRUE" >> docker-compose.yml
+    
   else
     echo "    image: kademlia_node" >> docker-compose.yml
     echo "    environment:" >> docker-compose.yml
