@@ -50,6 +50,21 @@ func main() {
 		} else {
 			fmt.Println("Sent ping to: ", bootstrapContact)
 		}
+
+		time.Sleep(3 * time.Second)
+		k.Node.RoutingTable.Print()
+
+		// Do iterative find node
+		time.Sleep(5 * time.Second)
+		conts, err := k.Node.IterativeFindNode(k.Node.GetSelfContact().ID)
+		if err != nil {
+			fmt.Println("Iterative fail")
+		}
+		fmt.Println("Iterative contacts:", conts)
+
+		time.Sleep(10 * time.Second)
+		k.Node.RoutingTable.Print()
+
 	}
 
 	select {} // keep running

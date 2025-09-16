@@ -85,11 +85,15 @@ func (s *Server) handleIncoming() {
 		case "PING":
 			resp = *NewRPCMessage("PONG", Payload{SourceContact: in.RPC.Payload.SourceContact}, false)
 		case "FIND_NODE":
-			contacts := s.node.LookupContact(s.node.GetSelfContact())
+			target := NewKademliaID(in.RPC.Payload.Key)
+			contacts := s.node.LookupClosestContacts(NewContact(target, ""))
 			resp = *NewRPCMessage("FIND_NODE", Payload{Contacts: contacts, SourceContact: in.RPC.Payload.SourceContact}, false)
 		default:
 			resp = *NewRPCMessage("ERROR", Payload{SourceContact: in.RPC.Payload.SourceContact}, false)
 		}
+
+		// Add the requesting node
+		s.node.AddContact(in.RPC.Payload.SourceContact)
 
 		// Ensure same PID
 		PID := in.RPC.PacketID

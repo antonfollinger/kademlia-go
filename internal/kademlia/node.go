@@ -2,6 +2,8 @@ package kademlia
 
 import (
 	"fmt"
+	"sort"
+	"sync"
 )
 
 const alpha = 3
@@ -11,12 +13,14 @@ type Node struct {
 	RoutingTable *RoutingTable
 	Storage      map[string][]byte
 	Client       ClientAPI
+	mu           sync.Mutex
 }
 
 type NodeAPI interface {
 	GetSelfContact() Contact
 	AddContact(contact Contact)
-	LookupContact(target Contact) []Contact
+	LookupClosestContacts(target Contact) []Contact
+	IterativeFindNode(target *KademliaID) ([]Contact, error)
 	LookupData(hash string) []byte
 	Store(key string, data []byte)
 }
@@ -62,7 +66,8 @@ func (node *Node) GetSelfContact() (self Contact) {
 }
 
 func (node *Node) AddContact(contact Contact) {
-
+	node.mu.Lock()
+	defer node.mu.Unlock()
 	bucket := node.RoutingTable.buckets[node.RoutingTable.getBucketIndex(contact.ID)]
 
 	if bucket.Len() < bucketSize {
@@ -85,8 +90,70 @@ func (node *Node) AddContact(contact Contact) {
 	}
 }
 
-func (node *Node) LookupContact(target Contact) []Contact {
+func (node *Node) LookupClosestContacts(target Contact) []Contact {
 	return node.RoutingTable.FindClosestContacts(target.ID, alpha)
+}
+
+func (node *Node) IterativeFindNode(target *KademliaID) ([]Contact, error) {
+	shortlist := node.LookupClosestContacts(NewContact(target, ""))
+	queried := make(map[string]bool)
+
+	for {
+		batch := []Contact{}
+
+		// take alpha closest unqueried nodes
+		for _, c := range shortlist {
+			if !queried[c.ID.String()] && len(batch) < alpha {
+				batch = append(batch, c)
+			}
+		}
+
+		// if we cannot find any closer nodes then we are done
+		if len(batch) == 0 {
+			break
+		}
+
+		results := make(chan []Contact, len(batch))
+		for _, contact := range batch {
+			queried[contact.ID.String()] = true
+			go func(c Contact) {
+				contacts, err := node.Client.SendFindNodeMessage(target, c)
+				if err != nil {
+					results <- nil
+					return
+				}
+				results <- contacts
+			}(contact)
+		}
+
+		updated := false
+		for i := 0; i < len(batch); i++ {
+			contacts := <-results
+			for _, c := range contacts {
+				if !queried[c.ID.String()] {
+					shortlist = append(shortlist, c)
+					updated = true
+				}
+			}
+		}
+
+		if !updated {
+			break
+		}
+
+		// Sort the shortlist slice
+		sort.Slice(shortlist, func(i, j int) bool {
+			di := shortlist[i].ID.CalcDistance(target)
+			dj := shortlist[j].ID.CalcDistance(target)
+			return di.Less(dj)
+		})
+	}
+
+	k := alpha
+	if len(shortlist) < k {
+		k = len(shortlist)
+	}
+	return shortlist[:k], nil
 }
 
 func (node *Node) LookupData(hash string) []byte {
@@ -94,6 +161,8 @@ func (node *Node) LookupData(hash string) []byte {
 }
 
 func (node *Node) Store(key string, data []byte) {
+	node.mu.Lock()
+	defer node.mu.Unlock()
 	node.Storage[key] = data
 	fmt.Printf("Stored data with key %s\n", key)
 }

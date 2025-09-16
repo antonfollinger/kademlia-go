@@ -2,6 +2,7 @@ package kademlia
 
 import (
 	"fmt"
+	"sync"
 )
 
 const bucketSize = 20
@@ -11,6 +12,7 @@ const bucketSize = 20
 type RoutingTable struct {
 	me      Contact
 	buckets [IDLength * 8]*bucket
+	mu      sync.Mutex
 }
 
 func GetMe(routingTable *RoutingTable) Contact {
@@ -29,6 +31,9 @@ func NewRoutingTable(me Contact) *RoutingTable {
 
 // AddContact add a new contact to the correct Bucket
 func (routingTable *RoutingTable) AddContact(contact Contact) {
+	routingTable.mu.Lock()
+	defer routingTable.mu.Unlock()
+
 	bucketIndex := routingTable.getBucketIndex(contact.ID)
 	bucket := routingTable.buckets[bucketIndex]
 	bucket.AddContact(contact)
@@ -36,6 +41,8 @@ func (routingTable *RoutingTable) AddContact(contact Contact) {
 
 // FindClosestContacts finds the count closest Contacts to the target in the RoutingTable
 func (routingTable *RoutingTable) FindClosestContacts(target *KademliaID, count int) []Contact {
+	routingTable.mu.Lock()
+	defer routingTable.mu.Unlock()
 	var candidates ContactCandidates
 	bucketIndex := routingTable.getBucketIndex(target)
 	bucket := routingTable.buckets[bucketIndex]
@@ -77,12 +84,16 @@ func (routingTable *RoutingTable) getBucketIndex(id *KademliaID) int {
 }
 
 func (routingTable *RoutingTable) RemoveContact(contact Contact) {
+	routingTable.mu.Lock()
+	defer routingTable.mu.Unlock()
 	bucketIndex := routingTable.getBucketIndex(contact.ID)
 	bucket := routingTable.buckets[bucketIndex]
 	fmt.Printf("RemoveContact not implemented yet for bucket %d (bucket size: %d)\n", bucketIndex, bucket.Len())
 }
 
 func (routingTable *RoutingTable) Print() {
+	routingTable.mu.Lock()
+	defer routingTable.mu.Unlock()
 	fmt.Println("Routing Table:")
 	for i, bucket := range routingTable.buckets {
 		if bucket.Len() > 0 {
