@@ -157,7 +157,11 @@ func (node *Node) IterativeFindNode(target *KademliaID) ([]Contact, error) {
 }
 
 func (node *Node) LookupData(hash string) []byte {
-	return node.Storage[hash]
+	data, ok := node.Storage[hash]
+	if !ok {
+		return nil
+	}
+	return data
 }
 
 func (node *Node) Store(key string, data []byte) {

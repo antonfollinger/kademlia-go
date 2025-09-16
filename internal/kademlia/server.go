@@ -83,11 +83,27 @@ func (s *Server) handleIncoming() {
 		var resp RPCMessage
 		switch in.RPC.Type {
 		case "PING":
-			resp = *NewRPCMessage("PONG", Payload{SourceContact: in.RPC.Payload.SourceContact}, false)
+			resp = *NewRPCMessage("PONG", Payload{
+				SourceContact: in.RPC.Payload.SourceContact,
+			}, false)
 		case "FIND_NODE":
 			target := NewKademliaID(in.RPC.Payload.Key)
 			contacts := s.node.LookupClosestContacts(NewContact(target, ""))
-			resp = *NewRPCMessage("FIND_NODE", Payload{Contacts: contacts, SourceContact: in.RPC.Payload.SourceContact}, false)
+			resp = *NewRPCMessage("FIND_NODE", Payload{
+				Contacts:      contacts,
+				SourceContact: in.RPC.Payload.SourceContact,
+			}, false)
+		case "STORE":
+			s.node.Store(in.RPC.Payload.Key, in.RPC.Payload.Data)
+			resp = *NewRPCMessage("STORE", Payload{
+				SourceContact: in.RPC.Payload.SourceContact,
+			}, false)
+		case "FIND_VALUE":
+			value := s.node.LookupData(in.RPC.Payload.Key)
+			resp = *NewRPCMessage("FIND_VALUE", Payload{
+				Data:          value,
+				SourceContact: in.RPC.Payload.SourceContact,
+			}, false)
 		default:
 			resp = *NewRPCMessage("ERROR", Payload{SourceContact: in.RPC.Payload.SourceContact}, false)
 		}

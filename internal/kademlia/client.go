@@ -139,83 +139,81 @@ func (client *Client) SendFindNodeMessage(target *KademliaID, contact Contact) (
 	}
 }
 
-/*
-func (client *Client) SendStoreMessage(target Contact) (RPCMessage, error) {
+// When part of a network, it must be possible for any node to upload an object
+// that will end up at the designated storage nodes. In Kademlia terminology,
+// the designated nodes are the K nodes nearest to the hash of the data object in question.
+// Data objects are always UTF-8 strings
+func (client *Client) SendStoreMessage(data []byte) (RPCMessage, error) {
+	// Use a hashing method to generate a KademliaID key from the data
+	key := NewKademliaID("abc") // change to data here
 
-	request := NewRPCMessage("STORE", Payload{}, true)
-	respChan, err := client.SendMessage(target, request)
+	// Find closest nodes to the generated key
+	closest, err := client.node.IterativeFindNode(key)
 	if err != nil {
 		return RPCMessage{}, err
 	}
 
-	// Wait for response
-	select {
-	case resp := <-respChan:
-		fmt.Println("Response received")
-		fmt.Printf("RPC INFO: %+v\n\n", resp)
-		return resp, nil
-	case <-time.After(2 * time.Second):
-		return RPCMessage{}, fmt.Errorf("STORE Timeout")
-	}
+	k := alpha // minimum number of nodes to store
+	storedCount := 0
+	var lastResp RPCMessage
 
-		if msg.Query {
-			client.node.Store(msg.Payload.Key, msg.Payload.Data)
-
-			payload := Payload{
-				SourceContact: client.node.GetSelfContact(),
-			}
-			msgout := NewRPCMessage("STORE", payload, false)
-			client.SendMessage(msg.Payload.SourceContact, msgout)
-
-		} else {
-			if msg.Payload.SourceContact != nil {
-				client.node.AddContact(msg.Payload.SourceContact)
-
-				client.node.AddContact(msg.Payload.SourceContact)
-				fmt.Printf("Got STORE ACK from %s:%d (ID=%s, PacketID=%s)\n",
-					msg.Payload.SourceContact.Address,
-					msg.Payload.SourceContact.ID.String(),
-					msg.PacketID)
-				client.node.AddContact(msg.Payload.SourceContact)
-			}
+	for _, contact := range closest {
+		request := NewRPCMessage("STORE", Payload{Key: key.String(), Data: data}, true)
+		respChan, err := client.SendMessage(contact, request)
+		if err != nil {
+			continue
 		}
+
+		select {
+		case resp := <-respChan:
+			fmt.Println("STORE response received")
+
+			// Assume any response means successful store
+			storedCount++
+			lastResp = resp
+			if storedCount >= k {
+				return lastResp, nil
+			}
+		case <-time.After(2 * time.Second):
+			fmt.Println("STORE Timeout for contact", contact.String())
+			// try next contact
+		}
+	}
+	// If fewer than k nodes stored the data
+	return RPCMessage{}, fmt.Errorf("data could not be stored on at least %d nodes", k)
 }
 
-func (client *Client) SendFindValueMessage(target Contact) (RPCMessage, error) {
-
-	request := NewRPCMessage("FIND_VALUE", Payload{}, true)
-	respChan, err := client.SendMessage(target, request)
+// When part of a network with uploaded objects, it must be possible to find and
+// download any object, as long as it is stored by at least one designated node.
+func (client *Client) SendFindValueMessage(hash string) (RPCMessage, error) {
+	hashID := NewKademliaID(hash)
+	closest, err := client.node.IterativeFindNode(hashID)
 	if err != nil {
 		return RPCMessage{}, err
 	}
 
-	// Wait for response
-	select {
-	case resp := <-respChan:
-		fmt.Println("Response received")
-		fmt.Printf("RPC INFO: %+v\n\n", resp)
-		return resp, nil
-	case <-time.After(2 * time.Second):
-		return RPCMessage{}, fmt.Errorf("FIND_VALUE Timeout")
-	}
-
-	/*
-		if msg.Query {
-			payload := Payload{
-				Data:          client.node.LookupData(msg.Payload.Key),
-				SourceContact: client.node.GetSelfContact(),
-			}
-			msgout := NewRPCMessage("FIND_VALUE", payload, false)
-			client.SendMessage(msg.Payload.SourceContact, msgout)
-		} else {
-			client.node.AddContact(msg.Payload.SourceContact)
-
-			if msg.Payload.Data != nil {
-				fmt.Printf("Got FIND_VALUE response with data: %s (PacketID=%s)\n",
-					string(msg.Payload.Data),
-					msg.PacketID)
-			}
+	for _, contact := range closest {
+		request := NewRPCMessage("FIND_VALUE", Payload{Key: hash}, true)
+		respChan, err := client.SendMessage(contact, request)
+		if err != nil {
+			continue
 		}
+
+		select {
+		case resp := <-respChan:
+			fmt.Println("FIND_VALUE response received")
+			if resp.Payload.Data != nil {
+				// Found the data, return immediately
+				return resp, nil
+			}
+			// else, try next contact
+		case <-time.After(2 * time.Second):
+			fmt.Println("FIND_VALUE Timeout for contact", contact.String())
+			// try next contact
+		}
+	}
+	// If none of the contacts had the data
+	return RPCMessage{}, fmt.Errorf("FIND_VALUE not found on any contacted node")
 }
 
 // For CLI implementation
