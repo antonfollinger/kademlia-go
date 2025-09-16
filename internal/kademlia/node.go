@@ -4,6 +4,8 @@ import (
 	"fmt"
 )
 
+const alpha = 3
+
 type Node struct {
 	Id           *KademliaID
 	RoutingTable *RoutingTable
@@ -84,7 +86,7 @@ func (node *Node) AddContact(contact Contact) {
 }
 
 func (node *Node) LookupContact(target Contact) []Contact {
-	return node.RoutingTable.FindClosestContacts(target.ID, bucketSize)
+	return node.RoutingTable.FindClosestContacts(target.ID, alpha)
 }
 
 func (node *Node) LookupData(hash string) []byte {

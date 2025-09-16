@@ -60,6 +60,10 @@ func (client *Client) listen() {
 
 func (client *Client) SendMessage(target Contact, msg *RPCMessage) (chan RPCMessage, error) {
 
+	// Add contact information
+	msg.Payload.SourceContact = client.node.GetSelfContact()
+	msg.Payload.TargetContact = target
+
 	// Build UDP address from Contact
 	addr, err := net.ResolveUDPAddr("udp", target.Address)
 	if err != nil {
@@ -86,14 +90,8 @@ func (client *Client) SendMessage(target Contact, msg *RPCMessage) (chan RPCMess
 }
 
 func (client *Client) SendPingMessage(target Contact) (RPCMessage, error) {
-	// Build payload with my own contact
-	payload := Payload{
-		SourceContact: client.node.GetSelfContact(),
-		TargetContact: target,
-	}
 
-	request := NewRPCMessage("PING", payload, true)
-	fmt.Println("Sending ping...")
+	request := NewRPCMessage("PING", Payload{}, true)
 	respChan, err := client.SendMessage(target, request)
 	if err != nil {
 		return RPCMessage{}, err
@@ -110,22 +108,47 @@ func (client *Client) SendPingMessage(target Contact) (RPCMessage, error) {
 	}
 }
 
-/*
-func (client *Client) SendFindContactMessage(msg *RPCMessage) {
-	if msg.Query {
-		contacts := client.node.LookupContact(msg.Payload.TargetContact)
+type Shortlist struct {
+	contact  Contact
+	queried  bool
+	distance *KademliaID
+}
 
-		payload := Payload{
-			Contacts:      contacts,
-			SourceContact: client.node.GetSelfContact(),
-		}
-		reply := NewRPCMessage("FIND_NODE", payload, false)
-		reply.PacketID = msg.PacketID // preserve request ID
+// JOIN, PING BOOTSTRAP, FIND_NODE SELF -> UNTIL DISTANCE ISN'T GETTING SMALLER
+// BASE CASE DISTANCE TO NODE AND TARGET IS 0
+func (client *Client) SendFindNodeMessage(target *KademliaID) (RPCMessage, error) {
 
-		if msg.Payload.SourceContact != nil {
-			_ = client.SendMessage(msg.Payload.SourceContact, reply)
+	payload := Payload{
+		Key: target.String(),
+	}
+
+	initialClosest := client.node.LookupContact(NewContact(target, ""))
+	shortlist := make([]*Shortlist, len(initialClosest))
+	for i, c := range initialClosest {
+		shortlist[i] = &Shortlist{
+			contact:  c,
+			queried:  false,
+			distance: c.ID.CalcDistance(target),
 		}
-	} else {
+	}
+
+	request := NewRPCMessage("FIND_NODE", payload, true)
+	respChan, err := client.SendMessage(target, request)
+	if err != nil {
+		return RPCMessage{}, err
+	}
+
+	// Wait for response
+	select {
+	case resp := <-respChan:
+		fmt.Println("Response received")
+		fmt.Printf("RPC INFO: %+v\n\n", resp)
+		return resp, nil
+	case <-time.After(2 * time.Second):
+		return RPCMessage{}, fmt.Errorf("FIND_NODE Timeout")
+	}
+
+	/*
 		if msg.Payload.SourceContact != nil {
 			client.node.AddContact(msg.Payload.SourceContact)
 		}
@@ -137,60 +160,98 @@ func (client *Client) SendFindContactMessage(msg *RPCMessage) {
 				client.node.AddContact(contact)
 			}
 		}
-	}
+	*/
 }
 
-func (client *Client) SendStoreMessage(msg *RPCMessage) {
-	if msg.Query {
-		client.node.Store(msg.Payload.Key, msg.Payload.Data)
+func (client *Client) SendStoreMessage(target Contact) (RPCMessage, error) {
 
-		payload := Payload{
-			SourceContact: client.node.GetSelfContact(),
-		}
-		msgout := NewRPCMessage("STORE", payload, false)
-		client.SendMessage(msg.Payload.SourceContact, msgout)
-
-	} else {
-		if msg.Payload.SourceContact != nil {
-			client.node.AddContact(msg.Payload.SourceContact)
-
-			client.node.AddContact(msg.Payload.SourceContact)
-			fmt.Printf("Got STORE ACK from %s:%d (ID=%s, PacketID=%s)\n",
-				msg.Payload.SourceContact.Address,
-				msg.Payload.SourceContact.ID.String(),
-				msg.PacketID)
-			client.node.AddContact(msg.Payload.SourceContact)
-		}
+	request := NewRPCMessage("STORE", Payload{}, true)
+	respChan, err := client.SendMessage(target, request)
+	if err != nil {
+		return RPCMessage{}, err
 	}
 
+	// Wait for response
+	select {
+	case resp := <-respChan:
+		fmt.Println("Response received")
+		fmt.Printf("RPC INFO: %+v\n\n", resp)
+		return resp, nil
+	case <-time.After(2 * time.Second):
+		return RPCMessage{}, fmt.Errorf("STORE Timeout")
+	}
+
+	/*
+		if msg.Query {
+			client.node.Store(msg.Payload.Key, msg.Payload.Data)
+
+			payload := Payload{
+				SourceContact: client.node.GetSelfContact(),
+			}
+			msgout := NewRPCMessage("STORE", payload, false)
+			client.SendMessage(msg.Payload.SourceContact, msgout)
+
+		} else {
+			if msg.Payload.SourceContact != nil {
+				client.node.AddContact(msg.Payload.SourceContact)
+
+				client.node.AddContact(msg.Payload.SourceContact)
+				fmt.Printf("Got STORE ACK from %s:%d (ID=%s, PacketID=%s)\n",
+					msg.Payload.SourceContact.Address,
+					msg.Payload.SourceContact.ID.String(),
+					msg.PacketID)
+				client.node.AddContact(msg.Payload.SourceContact)
+			}
+		}
+	*/
 }
 
-func (client *Client) SendFindValueMessage(msg *RPCMessage) {
-	if msg.Query {
-		payload := Payload{
-			Data:          client.node.LookupData(msg.Payload.Key),
-			SourceContact: client.node.GetSelfContact(),
-		}
-		msgout := NewRPCMessage("FIND_VALUE", payload, false)
-		client.SendMessage(msg.Payload.SourceContact, msgout)
-	} else {
-		client.node.AddContact(msg.Payload.SourceContact)
+func (client *Client) SendFindValueMessage(target Contact) (RPCMessage, error) {
 
-		if msg.Payload.Data != nil {
-			fmt.Printf("Got FIND_VALUE response with data: %s (PacketID=%s)\n",
-				string(msg.Payload.Data),
-				msg.PacketID)
-		}
+	request := NewRPCMessage("FIND_VALUE", Payload{}, true)
+	respChan, err := client.SendMessage(target, request)
+	if err != nil {
+		return RPCMessage{}, err
 	}
+
+	// Wait for response
+	select {
+	case resp := <-respChan:
+		fmt.Println("Response received")
+		fmt.Printf("RPC INFO: %+v\n\n", resp)
+		return resp, nil
+	case <-time.After(2 * time.Second):
+		return RPCMessage{}, fmt.Errorf("FIND_VALUE Timeout")
+	}
+
+	/*
+		if msg.Query {
+			payload := Payload{
+				Data:          client.node.LookupData(msg.Payload.Key),
+				SourceContact: client.node.GetSelfContact(),
+			}
+			msgout := NewRPCMessage("FIND_VALUE", payload, false)
+			client.SendMessage(msg.Payload.SourceContact, msgout)
+		} else {
+			client.node.AddContact(msg.Payload.SourceContact)
+
+			if msg.Payload.Data != nil {
+				fmt.Printf("Got FIND_VALUE response with data: %s (PacketID=%s)\n",
+					string(msg.Payload.Data),
+					msg.PacketID)
+			}
+		}
+	*/
 }
 
 // For CLI implementation
+/*
 func (client *Client) handleRPC(msg *RPCMessage) {
 	switch msg.Type {
 	case "PING":
 		client.SendPingMessage(msg)
 	case "FIND_NODE":
-		client.SendFindContactMessage(msg)
+		client.SendFindNodeMessage(msg)
 	case "STORE":
 		client.SendStoreMessage(msg)
 	case "FIND_VALUE":
@@ -198,38 +259,5 @@ func (client *Client) handleRPC(msg *RPCMessage) {
 	default:
 		fmt.Println("Unknown RPC message type:", msg.Type)
 	}
-}
-
-/*
-func (c *Client) SendPingMessage(ip string) error {
-	addr, err := net.ResolveUDPAddr("udp", ip)
-	fmt.Println("addr: ", addr.String())
-	if err != nil {
-		fmt.Println("Resolve error: ", err)
-		return err
-	}
-
-	conn, err := net.DialUDP("udp", nil, addr)
-	fmt.Println("conn: ", conn.LocalAddr())
-	if err != nil {
-		fmt.Println("Dial error: ", err)
-		return err
-	}
-	defer conn.Close()
-
-	msg := CreateRPCMessage("PING", Payload{SourceContact: &c.node.RoutingTable.me})
-	data, err := json.Marshal(msg)
-	if err != nil {
-		fmt.Println("Marshal error: ", err)
-		return err
-	}
-
-	_, err = conn.Write(data)
-	fmt.Println("PING sent to: ", ip)
-	if err != nil {
-		return err
-	}
-
-	return nil
 }
 */

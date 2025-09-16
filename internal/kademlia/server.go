@@ -83,10 +83,18 @@ func (s *Server) handleIncoming() {
 		var resp RPCMessage
 		switch in.RPC.Type {
 		case "PING":
-			resp = s.handlePing(in.RPC)
+			resp = *NewRPCMessage("PONG", Payload{SourceContact: in.RPC.Payload.SourceContact}, false)
+		case "FIND_NODE":
+			contacts := s.node.LookupContact(s.node.GetSelfContact())
+			resp = *NewRPCMessage("FIND_NODE", Payload{Contacts: contacts, SourceContact: in.RPC.Payload.SourceContact}, false)
 		default:
 			resp = *NewRPCMessage("ERROR", Payload{SourceContact: in.RPC.Payload.SourceContact}, false)
 		}
+
+		// Ensure same PID
+		PID := in.RPC.PacketID
+		resp.PacketID = PID
+
 		s.outgoing <- OutgoingRPC{RPC: resp, Addr: in.Addr}
 	}
 }
@@ -98,14 +106,4 @@ func (s *Server) respond() {
 		data, _ := json.Marshal(out.RPC)
 		_, _ = s.conn.WriteToUDP(data, out.Addr)
 	}
-}
-
-func (s *Server) handlePing(rpc RPCMessage) RPCMessage {
-	resp := NewRPCMessage("PONG", Payload{SourceContact: rpc.Payload.SourceContact}, false)
-
-	// Ensure same PID
-	PID := rpc.PacketID
-	resp.PacketID = PID
-
-	return *resp
 }

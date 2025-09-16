@@ -80,7 +80,6 @@ func (routingTable *RoutingTable) RemoveContact(contact Contact) {
 	bucketIndex := routingTable.getBucketIndex(contact.ID)
 	bucket := routingTable.buckets[bucketIndex]
 	fmt.Printf("RemoveContact not implemented yet for bucket %d (bucket size: %d)\n", bucketIndex, bucket.Len())
-	//
 }
 
 func (routingTable *RoutingTable) Print() {
@@ -90,7 +89,7 @@ func (routingTable *RoutingTable) Print() {
 			fmt.Printf("Bucket %d:\n", i)
 			for e := bucket.list.Front(); e != nil; e = e.Next() {
 				contact := e.Value.(Contact)
-				fmt.Printf("  %s:%d ID: %s\n", contact.Address, contact.ID.String())
+				fmt.Printf("  Address:%s ID: %s\n", contact.Address, contact.ID.String())
 			}
 		}
 	}
