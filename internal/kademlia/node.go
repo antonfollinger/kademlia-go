@@ -80,6 +80,11 @@ func (node *Node) GetSelfContact() (self Contact) {
 func (node *Node) AddContact(contact Contact) {
 	node.mu.Lock()
 	defer node.mu.Unlock()
+
+	if contact.ID.Equals(node.GetSelfContact().ID) {
+		return
+	}
+
 	bucket := node.RoutingTable.buckets[node.RoutingTable.getBucketIndex(contact.ID)]
 
 	if bucket.Len() < bucketSize {

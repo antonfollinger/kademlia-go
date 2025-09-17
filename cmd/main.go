@@ -58,5 +58,5 @@ func main() {
 
 	k.Node.Cli()
 
-	select {} // keep running
+	//select {} // keep running
 }

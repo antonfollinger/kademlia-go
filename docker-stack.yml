@@ -2,6 +2,8 @@ services:
   bootstrap:
     build: .
     image: kademlia_node
+    stdin_open: true
+    tty: true
     environment:
       - PORT=9001
       - ISBOOTSTRAP=TRUE
@@ -13,6 +15,8 @@ services:
 
   peer:
     image: kademlia_node
+    stdin_open: true
+    tty: true
     environment:
       - ISBOOTSTRAP=FALSE
       - BOOTSTRAPNODE=bootstrap

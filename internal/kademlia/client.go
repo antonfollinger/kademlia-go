@@ -157,6 +157,8 @@ func (client *Client) SendStoreMessage(data []byte) (RPCMessage, error) {
 		return RPCMessage{}, err
 	}
 
+	fmt.Println("SendStoreClosest:", closest)
+
 	k := alpha // minimum number of nodes to store
 	storedCount := 0
 	var lastResp RPCMessage
