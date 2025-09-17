@@ -57,6 +57,18 @@ func InitNode(isBootstrap bool, ip string, bootstrapIP string) (*Node, error) {
 	return node, nil
 }
 
+// JoinNetwork performs an iterative lookup on the node's own ID to populate the routing table with nearby contacts
+func (node *Node) JoinNetwork() error {
+	fmt.Println("Joining network: performing iterative lookup on self...")
+	_, err := node.IterativeFindNode(node.Id)
+	if err != nil {
+		fmt.Printf("JoinNetwork: IterativeFindNode error: %v\n", err)
+		return err
+	}
+	fmt.Println("JoinNetwork: Routing table updated with nearby contacts.")
+	return nil
+}
+
 func (node *Node) SetClient(client ClientAPI) {
 	node.Client = client
 }

@@ -1,45 +1,57 @@
 package kademlia
 
 import (
-	"bufio"
 	"fmt"
 	"os"
-	"strings"
+
+	"github.com/spf13/cobra"
 )
 
 func (node *Node) Cli() {
-	reader := bufio.NewReader(os.Stdin)
-	fmt.Println("Node CLI started. Commands: put <content>, get <hash>, exit")
+	// Root command
+	var rootCmd = &cobra.Command{
+		Use:   "node",
+		Short: "Kademlia node CLI",
+		Long:  "A command-line interface for interacting with a running Kademlia node.",
+	}
 
-	for {
-		fmt.Print("> ")
-		input, _ := reader.ReadString('\n')
-		input = strings.TrimSpace(input)
-		parts := strings.SplitN(input, " ", 2)
+	// put command
+	var putCmd = &cobra.Command{
+		Use:   "put [content]",
+		Short: "Store content in the DHT",
+		Args:  cobra.ExactArgs(1),
+		Run: func(cmd *cobra.Command, args []string) {
+			node.Put(args[0])
+		},
+	}
 
-		if len(parts) == 0 {
-			continue
-		}
+	// get command
+	var getCmd = &cobra.Command{
+		Use:   "get [hash]",
+		Short: "Retrieve content from the DHT by hash",
+		Args:  cobra.ExactArgs(1),
+		Run: func(cmd *cobra.Command, args []string) {
+			node.Get(args[0])
+		},
+	}
 
-		switch parts[0] {
-		case "put":
-			if len(parts) < 2 {
-				fmt.Println("Usage: put <content>")
-				continue
-			}
-			node.Put(parts[1])
-		case "get":
-			if len(parts) < 2 {
-				fmt.Println("Usage: get <hash>")
-				continue
-			}
-			node.Get(parts[1])
-		case "exit":
+	// exit command
+	var exitCmd = &cobra.Command{
+		Use:   "exit",
+		Short: "Shut down the node",
+		Run: func(cmd *cobra.Command, args []string) {
 			fmt.Println("Shutting down node.")
-			return
-		default:
-			fmt.Println("Unknown command. Use put <content>, get <hash>, or exit.")
-		}
+			os.Exit(0)
+		},
+	}
+
+	// Attach subcommands to root
+	rootCmd.AddCommand(putCmd, getCmd, exitCmd)
+
+	// Run CLI
+	if err := rootCmd.Execute(); err != nil {
+		fmt.Println("Error:", err)
+		os.Exit(1)
 	}
 }
 

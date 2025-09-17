@@ -12,6 +12,7 @@ services:
     environment:
       - PORT=9001
       - ISBOOTSTRAP=TRUE
+      - ENABLECLI=TRUE
     deploy:
       replicas: 1
     networks:
@@ -22,6 +23,7 @@ services:
     environment:
       - ISBOOTSTRAP=FALSE
       - BOOTSTRAPNODE=bootstrap
+      - ENABLECLI=TRUE
     depends_on:
       - bootstrap
     deploy:

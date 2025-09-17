@@ -3,6 +3,7 @@ package kademlia
 import (
 	"fmt"
 	"net"
+	"os"
 )
 
 type Kademlia struct {
@@ -41,6 +42,12 @@ func InitKademlia(port string, bootstrap bool, bootstrapIP string) (*Kademlia, e
 	}
 
 	k.Node.SetClient(k.Client)
+
+	// Integrate JoinNetwork for both bootstrap and peer nodes
+	err := k.Node.JoinNetwork()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Failed to join network: %v\n", err)
+	}
 
 	return k, nil
 }

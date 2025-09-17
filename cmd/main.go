@@ -41,6 +41,7 @@ func main() {
 			fmt.Fprintf(os.Stderr, "Failed to resolve bootstrap node after retries: %v\n", IPerr)
 			os.Exit(1)
 		}
+
 		bootstrapIP = bootStrapAddr[0].String() + ":" + "9001"
 
 		k, kadErr = kademlia.InitKademlia(port, false, bootstrapIP)
@@ -51,36 +52,11 @@ func main() {
 	}
 
 	k.Server.RunServer()
-	if isBootstrap == "TRUE" {
-		time.Sleep(15 * time.Second)
-		ans, err := k.Client.SendStoreMessage([]byte("test123"))
-		if err != nil {
-			fmt.Fprintf(os.Stderr, "Failed to SendStoreMessage %v\n", err)
-		} else {
-			fmt.Println("Sent SendStoreMessage: ", ans)
-		}
-	}
 
-	if isBootstrap == "FALSE" {
-		time.Sleep(5 * time.Second)
-		bootstrapContact := kademlia.NewContact(kademlia.NewKademliaID("0000000000000000000000000000000000000000"), bootstrapIP)
-		_, err := k.Client.SendPingMessage(bootstrapContact)
-		if err != nil {
-			fmt.Fprintf(os.Stderr, "Failed to ping bootstrap node: %v\n", err)
-		} else {
-			fmt.Println("Sent ping to: ", bootstrapContact)
-		}
+	time.Sleep(15 * time.Second)
+	k.Node.PrintRoutingTable()
 
-		// Do iterative find node
-		time.Sleep(10 * time.Second)
-		k.Node.IterativeFindNode(k.Node.GetSelfContact().ID)
+	k.Node.Cli()
 
-		time.Sleep(30 * time.Second)
-		k.Node.PrintRoutingTable()
-	}
-
-	if os.Getenv("ENABLECLI") == "TRUE" {
-		k.Node.Cli()
-	}
 	select {} // keep running
 }
