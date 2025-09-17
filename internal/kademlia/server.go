@@ -64,7 +64,7 @@ func (s *Server) listen() {
 			fmt.Println("listen error:", err)
 			continue
 		}
-		fmt.Printf("Server found RPC from %v, bytes read: %d\n\n", addr, n)
+		//fmt.Printf("Server found RPC from %v, bytes read: %d\n\n", addr, n)
 		var rpc RPCMessage
 
 		if err := json.Unmarshal(buf[:n], &rpc); err != nil {
@@ -72,7 +72,7 @@ func (s *Server) listen() {
 			continue
 		}
 		if rpc.Query {
-			fmt.Printf("RPC INFO: %+v\n\n", rpc)
+			//fmt.Printf("SERVER RPC INFO: %+v\n\n", rpc)
 			s.incoming <- IncomingRPC{RPC: rpc, Addr: addr}
 		}
 	}
@@ -84,28 +84,30 @@ func (s *Server) handleIncoming() {
 		switch in.RPC.Type {
 		case "PING":
 			resp = *NewRPCMessage("PONG", Payload{
-				SourceContact: in.RPC.Payload.SourceContact,
+				TargetContact: in.RPC.Payload.SourceContact,
 			}, false)
 		case "FIND_NODE":
 			target := NewKademliaID(in.RPC.Payload.Key)
 			contacts := s.node.LookupClosestContacts(NewContact(target, ""))
 			resp = *NewRPCMessage("FIND_NODE", Payload{
 				Contacts:      contacts,
-				SourceContact: in.RPC.Payload.SourceContact,
+				TargetContact: in.RPC.Payload.SourceContact,
 			}, false)
 		case "STORE":
 			s.node.Store(in.RPC.Payload.Key, in.RPC.Payload.Data)
+			contacts := s.node.GetSelfContact()
 			resp = *NewRPCMessage("STORE", Payload{
-				SourceContact: in.RPC.Payload.SourceContact,
+				Contacts:      []Contact{contacts},
+				TargetContact: in.RPC.Payload.SourceContact,
 			}, false)
 		case "FIND_VALUE":
 			value := s.node.LookupData(in.RPC.Payload.Key)
 			resp = *NewRPCMessage("FIND_VALUE", Payload{
 				Data:          value,
-				SourceContact: in.RPC.Payload.SourceContact,
+				TargetContact: in.RPC.Payload.SourceContact,
 			}, false)
 		default:
-			resp = *NewRPCMessage("ERROR", Payload{SourceContact: in.RPC.Payload.SourceContact}, false)
+			resp = *NewRPCMessage("ERROR", Payload{TargetContact: in.RPC.Payload.TargetContact}, false)
 		}
 
 		// Add the requesting node
@@ -115,6 +117,8 @@ func (s *Server) handleIncoming() {
 		PID := in.RPC.PacketID
 		resp.PacketID = PID
 
+		resp.Payload.SourceContact = s.node.GetSelfContact()
+
 		s.outgoing <- OutgoingRPC{RPC: resp, Addr: in.Addr}
 	}
 }
@@ -122,7 +126,6 @@ func (s *Server) handleIncoming() {
 func (s *Server) respond() {
 	for {
 		out := <-s.outgoing
-		fmt.Println("Responding to:", out.Addr)
 		data, _ := json.Marshal(out.RPC)
 		_, _ = s.conn.WriteToUDP(data, out.Addr)
 	}

@@ -45,11 +45,11 @@ func InitClient(node NodeAPI) (*Client, error) {
 func (client *Client) listen() {
 	buf := make([]byte, 4096)
 	for {
-		n, addr, err := client.conn.ReadFromUDP(buf)
+		n, _, err := client.conn.ReadFromUDP(buf)
 		if err != nil {
 			continue
 		}
-		fmt.Printf("Client found RPC from %v, bytes read: %d\n\n", addr, n)
+		//fmt.Printf("Client found RPC from %v, bytes read: %d\n\n", addr, n)
 		var resp RPCMessage
 		if err := json.Unmarshal(buf[:n], &resp); err != nil {
 			continue
@@ -89,8 +89,6 @@ func (client *Client) SendMessage(target Contact, msg *RPCMessage) (chan RPCMess
 	if err != nil {
 		return nil, fmt.Errorf("failed to send UDP message: %w", err)
 	}
-
-	fmt.Println("Client sent a message with type:", msg.Type, "to", target)
 
 	return respChan, nil
 }
@@ -173,9 +171,9 @@ func (client *Client) SendStoreMessage(data []byte) (RPCMessage, error) {
 		select {
 		case resp := <-respChan:
 			fmt.Println("STORE response received")
-
 			// Assume any response means successful store
 			storedCount++
+			fmt.Println("\nData stored on:", resp.Payload.SourceContact, '\n')
 			lastResp = resp
 			if storedCount >= k {
 				return lastResp, nil
@@ -195,16 +193,20 @@ func (client *Client) SendFindValueMessage(hash string) (RPCMessage, error) {
 
 	hashID := sha1.Sum([]byte(hash))
 	key := NewKademliaID(fmt.Sprintf("%x", hashID[:]))
+
+	// First, check if we have have the value ourself
 	data := client.node.LookupData(key.String())
 	if data != nil {
 		return *NewRPCMessage("FIND_VALUE", Payload{Key: key.String(), Data: data}, false), nil
 	}
 
+	// Get nodes closest to the key
 	closest, err := client.node.IterativeFindNode(key)
 	if err != nil {
 		return RPCMessage{}, err
 	}
 
+	// Check with each node if they have the value
 	for _, contact := range closest {
 		request := NewRPCMessage("FIND_VALUE", Payload{Key: key.String()}, true)
 		respChan, err := client.SendMessage(contact, request)

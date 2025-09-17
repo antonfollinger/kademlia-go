@@ -168,9 +168,27 @@ func (node *Node) Store(key string, data []byte) {
 	node.mu.Lock()
 	defer node.mu.Unlock()
 	node.Storage[key] = data
-	fmt.Printf("Stored data with key %s\n", key)
 }
 
 func (node *Node) PrintStore() {
 	fmt.Printf("Store: %v\n", node.Storage)
+}
+
+func (node *Node) PrintRoutingTable() {
+	printRoutingTable := func() {
+		fmt.Printf("\n======= Routing Table %s =======\n", node.RoutingTable.me.ID.String())
+		fmt.Printf("Self: %s (%s)\n", node.RoutingTable.me.Address, node.RoutingTable.me.ID.String())
+		for i, bucket := range node.RoutingTable.buckets {
+			if bucket.Len() == 0 {
+				continue
+			}
+			fmt.Printf("Bucket %d:\n", i)
+			for e := bucket.list.Front(); e != nil; e = e.Next() {
+				contact := e.Value.(Contact)
+				fmt.Printf("  - %s (%s)\n", contact.Address, contact.ID.String())
+			}
+		}
+		fmt.Println("======================================================================")
+	}
+	printRoutingTable()
 }

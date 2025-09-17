@@ -62,7 +62,7 @@ func main() {
 	}
 
 	if isBootstrap == "FALSE" {
-		time.Sleep(2 * time.Second)
+		time.Sleep(5 * time.Second)
 		bootstrapContact := kademlia.NewContact(kademlia.NewKademliaID("0000000000000000000000000000000000000000"), bootstrapIP)
 		_, err := k.Client.SendPingMessage(bootstrapContact)
 		if err != nil {
@@ -71,23 +71,12 @@ func main() {
 			fmt.Println("Sent ping to: ", bootstrapContact)
 		}
 
-		time.Sleep(3 * time.Second)
-		k.Node.RoutingTable.Print()
-
 		// Do iterative find node
-		time.Sleep(5 * time.Second)
+		time.Sleep(10 * time.Second)
 		k.Node.IterativeFindNode(k.Node.GetSelfContact().ID)
 
-		time.Sleep(5 * time.Second)
-		fmt.Println("----- Routing Table  -----")
-		k.Node.RoutingTable.Print()
-		fmt.Println("--------------------------")
-
-		time.Sleep(20 * time.Second)
-		ans, _ := k.Client.SendFindValueMessage("test123")
-
-		fmt.Println(string(ans.Payload.Data))
-
+		time.Sleep(30 * time.Second)
+		k.Node.PrintRoutingTable()
 	}
 	select {} // keep running
 }
