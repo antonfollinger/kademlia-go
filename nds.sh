@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-NODE_COUNT=${1:-100} # default 50
+NODE_COUNT=${1:-10} # default 50
 
 cat <<EOF > docker-compose.yml
 services:
@@ -15,6 +15,9 @@ for i in $(seq 1 $NODE_COUNT); do
     echo "    environment:" >> docker-compose.yml
     echo "      - PORT=9001" >> docker-compose.yml
     echo "      - ISBOOTSTRAP=TRUE" >> docker-compose.yml
+    echo "      - ENABLECLI=TRUE" >> docker-compose.yml
+    echo "    stdin_open: true" >> docker-compose.yml
+    echo "    tty: true" >> docker-compose.yml
     
   else
     echo "    image: kademlia_node" >> docker-compose.yml

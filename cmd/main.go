@@ -78,5 +78,9 @@ func main() {
 		time.Sleep(30 * time.Second)
 		k.Node.PrintRoutingTable()
 	}
+
+	if os.Getenv("ENABLECLI") == "TRUE" {
+		k.Node.Cli()
+	}
 	select {} // keep running
 }
