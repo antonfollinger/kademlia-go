@@ -170,3 +170,7 @@ func (node *Node) Store(key string, data []byte) {
 	node.Storage[key] = data
 	fmt.Printf("Stored data with key %s\n", key)
 }
+
+func (node *Node) PrintStore() {
+	fmt.Printf("Store: %v\n", node.Storage)
+}

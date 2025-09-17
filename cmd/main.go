@@ -23,6 +23,7 @@ func main() {
 			fmt.Fprintf(os.Stderr, "Failed to initialize Kademlia: %v\n", kadErr)
 			os.Exit(1)
 		}
+
 	} else {
 		// Bootstrap Node info with retry
 		bootstrapNode := os.Getenv("BOOTSTRAPNODE")
@@ -50,6 +51,15 @@ func main() {
 	}
 
 	k.Server.RunServer()
+	if isBootstrap == "TRUE" {
+		time.Sleep(15 * time.Second)
+		ans, err := k.Client.SendStoreMessage([]byte("test123"))
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Failed to SendStoreMessage %v\n", err)
+		} else {
+			fmt.Println("Sent SendStoreMessage: ", ans)
+		}
+	}
 
 	if isBootstrap == "FALSE" {
 		time.Sleep(2 * time.Second)
@@ -66,15 +76,18 @@ func main() {
 
 		// Do iterative find node
 		time.Sleep(5 * time.Second)
-		conts, err := k.Node.IterativeFindNode(k.Node.GetSelfContact().ID)
-		if err != nil {
-			fmt.Println("Iterative fail")
-		}
-		fmt.Println("Iterative contacts:", conts)
+		k.Node.IterativeFindNode(k.Node.GetSelfContact().ID)
 
 		time.Sleep(5 * time.Second)
+		fmt.Println("----- Routing Table  -----")
 		k.Node.RoutingTable.Print()
-	}
+		fmt.Println("--------------------------")
 
+		time.Sleep(20 * time.Second)
+		ans, _ := k.Client.SendFindValueMessage("test123")
+
+		fmt.Println(string(ans.Payload.Data))
+
+	}
 	select {} // keep running
 }

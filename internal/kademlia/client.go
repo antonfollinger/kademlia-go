@@ -1,6 +1,7 @@
 package kademlia
 
 import (
+	"crypto/sha1"
 	"encoding/json"
 	"fmt"
 	"net"
@@ -89,6 +90,8 @@ func (client *Client) SendMessage(target Contact, msg *RPCMessage) (chan RPCMess
 		return nil, fmt.Errorf("failed to send UDP message: %w", err)
 	}
 
+	fmt.Println("Client sent a message with type:", msg.Type, "to", target)
+
 	return respChan, nil
 }
 
@@ -147,11 +150,12 @@ func (client *Client) SendFindNodeMessage(target *KademliaID, contact Contact) (
 // Data objects are always UTF-8 strings
 func (client *Client) SendStoreMessage(data []byte) (RPCMessage, error) {
 	// Use a hashing method to generate a KademliaID key from the data
-	key := NewKademliaID("abc") // change to data here
+	hash := sha1.Sum(data)
+	key := NewKademliaID(fmt.Sprintf("%x", hash[:]))
 
 	// Find closest nodes to the generated key
 	closest, err := client.node.IterativeFindNode(key)
-	if err != nil {
+	if err != nil || len(closest) == 0 {
 		return RPCMessage{}, err
 	}
 
@@ -188,14 +192,21 @@ func (client *Client) SendStoreMessage(data []byte) (RPCMessage, error) {
 // When part of a network with uploaded objects, it must be possible to find and
 // download any object, as long as it is stored by at least one designated node.
 func (client *Client) SendFindValueMessage(hash string) (RPCMessage, error) {
-	hashID := NewKademliaID(hash)
-	closest, err := client.node.IterativeFindNode(hashID)
+
+	hashID := sha1.Sum([]byte(hash))
+	key := NewKademliaID(fmt.Sprintf("%x", hashID[:]))
+	data := client.node.LookupData(key.String())
+	if data != nil {
+		return *NewRPCMessage("FIND_VALUE", Payload{Key: key.String(), Data: data}, false), nil
+	}
+
+	closest, err := client.node.IterativeFindNode(key)
 	if err != nil {
 		return RPCMessage{}, err
 	}
 
 	for _, contact := range closest {
-		request := NewRPCMessage("FIND_VALUE", Payload{Key: hash}, true)
+		request := NewRPCMessage("FIND_VALUE", Payload{Key: key.String()}, true)
 		respChan, err := client.SendMessage(contact, request)
 		if err != nil {
 			continue
