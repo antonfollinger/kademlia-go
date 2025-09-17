@@ -72,9 +72,8 @@ func main() {
 		}
 		fmt.Println("Iterative contacts:", conts)
 
-		time.Sleep(10 * time.Second)
+		time.Sleep(5 * time.Second)
 		k.Node.RoutingTable.Print()
-
 	}
 
 	select {} // keep running

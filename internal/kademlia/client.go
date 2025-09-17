@@ -17,6 +17,8 @@ type Client struct {
 type ClientAPI interface {
 	SendPingMessage(target Contact) (RPCMessage, error)
 	SendFindNodeMessage(target *KademliaID, contact Contact) ([]Contact, error)
+	SendStoreMessage(data []byte) (RPCMessage, error)
+	SendFindValueMessage(hash string) (RPCMessage, error)
 }
 
 func InitClient(node NodeAPI) (*Client, error) {
