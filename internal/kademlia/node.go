@@ -193,7 +193,7 @@ func (node *Node) PrintStore() {
 
 func (node *Node) PrintRoutingTable() {
 	printRoutingTable := func() {
-		fmt.Printf("\n======= Routing Table %s =======\n", node.RoutingTable.me.ID.String())
+		fmt.Printf("\n================= Routing Table %s =================\n", node.RoutingTable.me.ID.String())
 		fmt.Printf("Self: %s (%s)\n", node.RoutingTable.me.Address, node.RoutingTable.me.ID.String())
 		for i, bucket := range node.RoutingTable.buckets {
 			if bucket.Len() == 0 {
@@ -202,10 +202,10 @@ func (node *Node) PrintRoutingTable() {
 			fmt.Printf("Bucket %d:\n", i)
 			for e := bucket.list.Front(); e != nil; e = e.Next() {
 				contact := e.Value.(Contact)
-				fmt.Printf("  - %s (%s)\n", contact.Address, contact.ID.String())
+				fmt.Printf("  - %s (%s) [%s]\n", contact.Address, contact.ID.String(), contact.distance.String())
 			}
 		}
-		fmt.Println("======================================================================")
+		fmt.Println("==========================================================================================")
 	}
 	printRoutingTable()
 }

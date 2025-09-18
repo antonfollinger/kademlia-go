@@ -105,6 +105,7 @@ func (client *Client) SendPingMessage(target Contact) (RPCMessage, error) {
 	select {
 	case resp := <-respChan:
 		// Add contact
+		client.node.AddContact(resp.Payload.SourceContact)
 		fmt.Println("PING response received")
 		return resp, nil
 	case <-time.After(2 * time.Second):
@@ -172,8 +173,10 @@ func (client *Client) SendStoreMessage(data []byte) (RPCMessage, error) {
 
 		select {
 		case resp := <-respChan:
+			client.node.AddContact(resp.Payload.SourceContact)
 			fmt.Println("STORE response received")
 			// Assume any response means successful store
+
 			storedCount++
 			fmt.Println("\nData stored on:", resp.Payload.SourceContact, '\n')
 			lastResp = resp
@@ -219,6 +222,7 @@ func (client *Client) SendFindValueMessage(hash string) (RPCMessage, error) {
 		select {
 		case resp := <-respChan:
 			fmt.Println("FIND_VALUE response received")
+			client.node.AddContact(resp.Payload.SourceContact)
 			if resp.Payload.Data != nil {
 				// Found the data, return immediately
 				return resp, nil
