@@ -12,6 +12,7 @@ func (node *Node) Cli() {
 	fmt.Println("Node CLI started. Commands: put <content>, get <hash>, exit")
 
 	for {
+		fmt.Println("Commands: put <content>, get <hash>, exit")
 		fmt.Print("> ")
 		input, _ := reader.ReadString('\n')
 		input = strings.TrimSpace(input)
@@ -37,6 +38,9 @@ func (node *Node) Cli() {
 		case "exit":
 			fmt.Println("Shutting down node.")
 			return
+		case "print":
+			node.PrintRoutingTable()
+			node.PrintStore()
 		default:
 			fmt.Println("Unknown command. Use put <content>, get <hash>, or exit.")
 		}

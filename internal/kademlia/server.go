@@ -99,6 +99,7 @@ func (s *Server) handleIncoming() {
 			resp = *NewRPCMessage("STORE", Payload{
 				Contacts:      []Contact{contacts},
 				TargetContact: in.RPC.Payload.SourceContact,
+				Key:           in.RPC.Payload.Key,
 			}, false)
 		case "FIND_VALUE":
 			value := s.node.LookupData(in.RPC.Payload.Key)

@@ -188,16 +188,19 @@ func (client *Client) SendStoreMessage(data []byte) (RPCMessage, error) {
 			// try next contact
 		}
 	}
+
+	if storedCount > 0 {
+		return lastResp, nil
+	}
 	// If fewer than k nodes stored the data
-	return RPCMessage{}, fmt.Errorf("data could not be stored on at least %d nodes", k)
+	return RPCMessage{}, fmt.Errorf("data could not be stored on any nodes", k)
 }
 
 // When part of a network with uploaded objects, it must be possible to find and
 // download any object, as long as it is stored by at least one designated node.
 func (client *Client) SendFindValueMessage(hash string) (RPCMessage, error) {
 
-	hashID := sha1.Sum([]byte(hash))
-	key := NewKademliaID(fmt.Sprintf("%x", hashID[:]))
+	key := NewKademliaID(hash)
 
 	// First, check if we have have the value ourself
 	data := client.node.LookupData(key.String())

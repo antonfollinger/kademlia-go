@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net"
 	"os"
+	"time"
 )
 
 type Kademlia struct {
@@ -43,6 +44,17 @@ func InitKademlia(port string, bootstrap bool, bootstrapIP string) (*Kademlia, e
 
 	k.Node.SetClient(k.Client)
 
+	bootstrapID := NewKademliaID("0000000000000000000000000000000000000000")
+
+	if !k.Node.RoutingTable.me.ID.Equals(bootstrapID) {
+		_, err1 := k.Client.SendPingMessage(k.Node.RoutingTable.FindClosestContacts(bootstrapID, 1)[0])
+		if err1 != nil {
+			fmt.Printf("JoinNetwork: Unable to reach bootstrap node: %v\n", err1)
+			return k, err1
+		}
+		time.Sleep(5 * time.Second)
+
+	}
 	// Integrate JoinNetwork for both bootstrap and peer nodes
 	err := k.Node.JoinNetwork()
 	if err != nil {

@@ -35,7 +35,7 @@ func main() {
 				break
 			}
 			fmt.Printf("LookupIP error (attempt %d): %v\n", i+1, IPerr)
-			time.Sleep(2 * time.Second)
+			time.Sleep(5 * time.Second)
 		}
 		if IPerr != nil || len(bootStrapAddr) == 0 {
 			fmt.Fprintf(os.Stderr, "Failed to resolve bootstrap node after retries: %v\n", IPerr)

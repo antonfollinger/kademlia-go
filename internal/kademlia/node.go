@@ -44,6 +44,7 @@ func InitNode(isBootstrap bool, ip string, bootstrapIP string) (*Node, error) {
 		bootstrap := NewContact(NewKademliaID("0000000000000000000000000000000000000000"), bootstrapIP)
 		routingTable.AddContact(bootstrap)
 		fmt.Printf("\nBootstrap added with: \n Address: %s\n Contact: %s\n ID: %s\n", bootstrap.Address, bootstrap.String(), bootstrap.ID.String())
+
 	}
 
 	fmt.Printf("\nNew node was created with: \n Address: %s\n Contact: %s\n ID: %s\n\n", me.Address, me.String(), me.ID.String())
@@ -59,6 +60,7 @@ func InitNode(isBootstrap bool, ip string, bootstrapIP string) (*Node, error) {
 
 // JoinNetwork performs an iterative lookup on the node's own ID to populate the routing table with nearby contacts
 func (node *Node) JoinNetwork() error {
+
 	fmt.Println("Joining network: performing iterative lookup on self...")
 	_, err := node.IterativeFindNode(node.Id)
 	if err != nil {

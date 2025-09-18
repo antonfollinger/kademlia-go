@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 if [ "$ISBOOTSTRAP" = "TRUE" ]; then
   export PORT=9001
 else
