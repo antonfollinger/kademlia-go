@@ -6,6 +6,16 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func Test_routingtable_GetMe(t *testing.T) {
+	id := NewKademliaID("FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF")
+	contact := Contact{ID: id, Address: "localhost:8000"}
+	rt := NewRoutingTable(contact)
+
+	me := GetMe(rt)
+
+	assert.Equal(t, me, contact)
+}
+
 func Test_routingtable_NewRoutingTable(t *testing.T) {
 	id := NewKademliaID("FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF")
 	contact := Contact{ID: id, Address: "localhost:8000"}
@@ -32,7 +42,8 @@ func Test_routingtable_AddContact(t *testing.T) {
 
 	found := false
 	for e := bucket.list.Front(); e != nil; e = e.Next() {
-		if e.Value == contact2 {
+		c := e.Value.(Contact)
+		if c.ID.Equals(contact2.ID) && c.Address == contact2.Address {
 			found = true
 			break
 		}
