@@ -2,7 +2,6 @@ package kademlia
 
 import (
 	"encoding/hex"
-	"encoding/json"
 	"math/rand"
 )
 
@@ -11,19 +10,6 @@ const IDLength = 20
 
 // type definition of a KademliaID
 type KademliaID [IDLength]byte
-
-func (id *KademliaID) UnmarshalJSON(data []byte) error {
-	var arr [20]byte
-	if err := json.Unmarshal(data, &arr); err != nil {
-		return err
-	}
-	*id = arr
-	return nil
-}
-
-func (id KademliaID) MarshalJSON() ([]byte, error) {
-	return json.Marshal([20]byte(id))
-}
 
 func NewKademliaID(data string) *KademliaID {
 	decoded, _ := hex.DecodeString(data)
