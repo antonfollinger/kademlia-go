@@ -202,7 +202,7 @@ func (node *Node) PrintRoutingTable() {
 			fmt.Printf("Bucket %d:\n", i)
 			for e := bucket.list.Front(); e != nil; e = e.Next() {
 				contact := e.Value.(Contact)
-				fmt.Printf("  - %s (%s) [%s]\n", contact.Address, contact.ID.String(), contact.distance.String())
+				fmt.Printf("  - %s\t(%s)\t[%s]\n", contact.Address, contact.ID.String(), contact.distance.String())
 			}
 		}
 		fmt.Println("==========================================================================================")

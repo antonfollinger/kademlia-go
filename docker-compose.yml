@@ -1,7 +1,6 @@
 services:
   node1:
     build: .
-    image: kademlia_node
     stdin_open: true
     tty: true
     environment:
@@ -10,7 +9,7 @@ services:
       - ENABLECLI=TRUE
     networks: [testnet]
   node2:
-    image: kademlia_node
+    build: .
     stdin_open: true
     tty: true
     environment:
@@ -19,7 +18,7 @@ services:
       - ISBOOTSTRAP=FALSE
     networks: [testnet]
   node3:
-    image: kademlia_node
+    build: .
     stdin_open: true
     tty: true
     environment:
@@ -28,7 +27,7 @@ services:
       - ISBOOTSTRAP=FALSE
     networks: [testnet]
   node4:
-    image: kademlia_node
+    build: .
     stdin_open: true
     tty: true
     environment:
@@ -37,7 +36,7 @@ services:
       - ISBOOTSTRAP=FALSE
     networks: [testnet]
   node5:
-    image: kademlia_node
+    build: .
     stdin_open: true
     tty: true
     environment:
@@ -46,7 +45,7 @@ services:
       - ISBOOTSTRAP=FALSE
     networks: [testnet]
   node6:
-    image: kademlia_node
+    build: .
     stdin_open: true
     tty: true
     environment:
@@ -55,7 +54,7 @@ services:
       - ISBOOTSTRAP=FALSE
     networks: [testnet]
   node7:
-    image: kademlia_node
+    build: .
     stdin_open: true
     tty: true
     environment:
@@ -64,7 +63,7 @@ services:
       - ISBOOTSTRAP=FALSE
     networks: [testnet]
   node8:
-    image: kademlia_node
+    build: .
     stdin_open: true
     tty: true
     environment:
@@ -73,7 +72,7 @@ services:
       - ISBOOTSTRAP=FALSE
     networks: [testnet]
   node9:
-    image: kademlia_node
+    build: .
     stdin_open: true
     tty: true
     environment:
@@ -82,7 +81,7 @@ services:
       - ISBOOTSTRAP=FALSE
     networks: [testnet]
   node10:
-    image: kademlia_node
+    build: .
     stdin_open: true
     tty: true
     environment:
@@ -91,7 +90,7 @@ services:
       - ISBOOTSTRAP=FALSE
     networks: [testnet]
   node11:
-    image: kademlia_node
+    build: .
     stdin_open: true
     tty: true
     environment:
@@ -100,7 +99,7 @@ services:
       - ISBOOTSTRAP=FALSE
     networks: [testnet]
   node12:
-    image: kademlia_node
+    build: .
     stdin_open: true
     tty: true
     environment:
@@ -109,7 +108,7 @@ services:
       - ISBOOTSTRAP=FALSE
     networks: [testnet]
   node13:
-    image: kademlia_node
+    build: .
     stdin_open: true
     tty: true
     environment:
@@ -118,7 +117,7 @@ services:
       - ISBOOTSTRAP=FALSE
     networks: [testnet]
   node14:
-    image: kademlia_node
+    build: .
     stdin_open: true
     tty: true
     environment:
@@ -127,7 +126,7 @@ services:
       - ISBOOTSTRAP=FALSE
     networks: [testnet]
   node15:
-    image: kademlia_node
+    build: .
     stdin_open: true
     tty: true
     environment:
@@ -136,7 +135,7 @@ services:
       - ISBOOTSTRAP=FALSE
     networks: [testnet]
   node16:
-    image: kademlia_node
+    build: .
     stdin_open: true
     tty: true
     environment:
@@ -145,7 +144,7 @@ services:
       - ISBOOTSTRAP=FALSE
     networks: [testnet]
   node17:
-    image: kademlia_node
+    build: .
     stdin_open: true
     tty: true
     environment:
@@ -154,7 +153,7 @@ services:
       - ISBOOTSTRAP=FALSE
     networks: [testnet]
   node18:
-    image: kademlia_node
+    build: .
     stdin_open: true
     tty: true
     environment:
@@ -163,7 +162,7 @@ services:
       - ISBOOTSTRAP=FALSE
     networks: [testnet]
   node19:
-    image: kademlia_node
+    build: .
     stdin_open: true
     tty: true
     environment:
@@ -172,7 +171,7 @@ services:
       - ISBOOTSTRAP=FALSE
     networks: [testnet]
   node20:
-    image: kademlia_node
+    build: .
     stdin_open: true
     tty: true
     environment:
@@ -181,7 +180,7 @@ services:
       - ISBOOTSTRAP=FALSE
     networks: [testnet]
   node21:
-    image: kademlia_node
+    build: .
     stdin_open: true
     tty: true
     environment:
@@ -190,7 +189,7 @@ services:
       - ISBOOTSTRAP=FALSE
     networks: [testnet]
   node22:
-    image: kademlia_node
+    build: .
     stdin_open: true
     tty: true
     environment:
@@ -199,7 +198,7 @@ services:
       - ISBOOTSTRAP=FALSE
     networks: [testnet]
   node23:
-    image: kademlia_node
+    build: .
     stdin_open: true
     tty: true
     environment:
@@ -208,7 +207,7 @@ services:
       - ISBOOTSTRAP=FALSE
     networks: [testnet]
   node24:
-    image: kademlia_node
+    build: .
     stdin_open: true
     tty: true
     environment:
@@ -217,7 +216,7 @@ services:
       - ISBOOTSTRAP=FALSE
     networks: [testnet]
   node25:
-    image: kademlia_node
+    build: .
     stdin_open: true
     tty: true
     environment:
@@ -226,7 +225,7 @@ services:
       - ISBOOTSTRAP=FALSE
     networks: [testnet]
   node26:
-    image: kademlia_node
+    build: .
     stdin_open: true
     tty: true
     environment:
@@ -235,7 +234,7 @@ services:
       - ISBOOTSTRAP=FALSE
     networks: [testnet]
   node27:
-    image: kademlia_node
+    build: .
     stdin_open: true
     tty: true
     environment:
@@ -244,7 +243,7 @@ services:
       - ISBOOTSTRAP=FALSE
     networks: [testnet]
   node28:
-    image: kademlia_node
+    build: .
     stdin_open: true
     tty: true
     environment:
@@ -253,7 +252,7 @@ services:
       - ISBOOTSTRAP=FALSE
     networks: [testnet]
   node29:
-    image: kademlia_node
+    build: .
     stdin_open: true
     tty: true
     environment:
@@ -262,7 +261,7 @@ services:
       - ISBOOTSTRAP=FALSE
     networks: [testnet]
   node30:
-    image: kademlia_node
+    build: .
     stdin_open: true
     tty: true
     environment:
@@ -271,7 +270,7 @@ services:
       - ISBOOTSTRAP=FALSE
     networks: [testnet]
   node31:
-    image: kademlia_node
+    build: .
     stdin_open: true
     tty: true
     environment:
@@ -280,7 +279,7 @@ services:
       - ISBOOTSTRAP=FALSE
     networks: [testnet]
   node32:
-    image: kademlia_node
+    build: .
     stdin_open: true
     tty: true
     environment:
@@ -289,7 +288,7 @@ services:
       - ISBOOTSTRAP=FALSE
     networks: [testnet]
   node33:
-    image: kademlia_node
+    build: .
     stdin_open: true
     tty: true
     environment:
@@ -298,7 +297,7 @@ services:
       - ISBOOTSTRAP=FALSE
     networks: [testnet]
   node34:
-    image: kademlia_node
+    build: .
     stdin_open: true
     tty: true
     environment:
@@ -307,7 +306,7 @@ services:
       - ISBOOTSTRAP=FALSE
     networks: [testnet]
   node35:
-    image: kademlia_node
+    build: .
     stdin_open: true
     tty: true
     environment:
@@ -316,7 +315,7 @@ services:
       - ISBOOTSTRAP=FALSE
     networks: [testnet]
   node36:
-    image: kademlia_node
+    build: .
     stdin_open: true
     tty: true
     environment:
@@ -325,7 +324,7 @@ services:
       - ISBOOTSTRAP=FALSE
     networks: [testnet]
   node37:
-    image: kademlia_node
+    build: .
     stdin_open: true
     tty: true
     environment:
@@ -334,7 +333,7 @@ services:
       - ISBOOTSTRAP=FALSE
     networks: [testnet]
   node38:
-    image: kademlia_node
+    build: .
     stdin_open: true
     tty: true
     environment:
@@ -343,7 +342,7 @@ services:
       - ISBOOTSTRAP=FALSE
     networks: [testnet]
   node39:
-    image: kademlia_node
+    build: .
     stdin_open: true
     tty: true
     environment:
@@ -352,7 +351,7 @@ services:
       - ISBOOTSTRAP=FALSE
     networks: [testnet]
   node40:
-    image: kademlia_node
+    build: .
     stdin_open: true
     tty: true
     environment:
@@ -361,7 +360,7 @@ services:
       - ISBOOTSTRAP=FALSE
     networks: [testnet]
   node41:
-    image: kademlia_node
+    build: .
     stdin_open: true
     tty: true
     environment:
@@ -370,7 +369,7 @@ services:
       - ISBOOTSTRAP=FALSE
     networks: [testnet]
   node42:
-    image: kademlia_node
+    build: .
     stdin_open: true
     tty: true
     environment:
@@ -379,7 +378,7 @@ services:
       - ISBOOTSTRAP=FALSE
     networks: [testnet]
   node43:
-    image: kademlia_node
+    build: .
     stdin_open: true
     tty: true
     environment:
@@ -388,7 +387,7 @@ services:
       - ISBOOTSTRAP=FALSE
     networks: [testnet]
   node44:
-    image: kademlia_node
+    build: .
     stdin_open: true
     tty: true
     environment:
@@ -397,7 +396,7 @@ services:
       - ISBOOTSTRAP=FALSE
     networks: [testnet]
   node45:
-    image: kademlia_node
+    build: .
     stdin_open: true
     tty: true
     environment:
@@ -406,7 +405,7 @@ services:
       - ISBOOTSTRAP=FALSE
     networks: [testnet]
   node46:
-    image: kademlia_node
+    build: .
     stdin_open: true
     tty: true
     environment:
@@ -415,7 +414,7 @@ services:
       - ISBOOTSTRAP=FALSE
     networks: [testnet]
   node47:
-    image: kademlia_node
+    build: .
     stdin_open: true
     tty: true
     environment:
@@ -424,7 +423,7 @@ services:
       - ISBOOTSTRAP=FALSE
     networks: [testnet]
   node48:
-    image: kademlia_node
+    build: .
     stdin_open: true
     tty: true
     environment:
@@ -433,7 +432,7 @@ services:
       - ISBOOTSTRAP=FALSE
     networks: [testnet]
   node49:
-    image: kademlia_node
+    build: .
     stdin_open: true
     tty: true
     environment:
@@ -442,7 +441,7 @@ services:
       - ISBOOTSTRAP=FALSE
     networks: [testnet]
   node50:
-    image: kademlia_node
+    build: .
     stdin_open: true
     tty: true
     environment:
