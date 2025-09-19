@@ -3,6 +3,7 @@ package kademlia
 import (
 	"net"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -40,5 +41,64 @@ func Test_Server_Channel_Operations(t *testing.T) {
 		// success
 	default:
 		t.Error("Failed to send to outgoing channel")
+	}
+}
+
+func Test_Server_ProcessRequest_STORE(t *testing.T) {
+	myPort = "4322"
+	node := &MockNodeAPI{}
+	server, err := InitServer(node)
+	assert.NoError(t, err)
+	addr := &net.UDPAddr{IP: net.IPv4(127, 0, 0, 1), Port: 9998}
+	rpc := RPCMessage{Type: "STORE", Payload: Payload{Key: "key", Data: []byte("value"), SourceContact: node.GetSelfContact()}}
+	in := IncomingRPC{RPC: rpc, Addr: addr}
+	go server.processRequest(in)
+	// Check outgoing channel for STORE response
+	select {
+	case out := <-server.outgoing:
+		assert.Equal(t, "STORE", out.RPC.Type)
+		assert.Equal(t, "key", out.RPC.Payload.Key)
+		assert.Equal(t, node.GetSelfContact(), out.RPC.Payload.Contacts[0])
+	case <-time.After(500 * 1e6):
+		t.Error("No STORE response received")
+	}
+}
+
+func Test_Server_ProcessRequest_FIND_VALUE(t *testing.T) {
+	myPort = "4323"
+	node := &MockNodeAPI{}
+	server, err := InitServer(node)
+	assert.NoError(t, err)
+	addr := &net.UDPAddr{IP: net.IPv4(127, 0, 0, 1), Port: 9997}
+	rpc := RPCMessage{Type: "FIND_VALUE", Payload: Payload{Key: "key", SourceContact: node.GetSelfContact()}}
+	in := IncomingRPC{RPC: rpc, Addr: addr}
+	go server.processRequest(in)
+	// Check outgoing channel for FIND_VALUE response
+	select {
+	case out := <-server.outgoing:
+		assert.Equal(t, "FIND_VALUE", out.RPC.Type)
+		// Data is nil in mock
+		assert.Nil(t, out.RPC.Payload.Data)
+	case <-time.After(500 * 1e6):
+		t.Error("No FIND_VALUE response received")
+	}
+}
+
+func Test_Server_ProcessRequest_Default_Error(t *testing.T) {
+	myPort = "4324"
+	node := &MockNodeAPI{}
+	server, err := InitServer(node)
+	assert.NoError(t, err)
+	addr := &net.UDPAddr{IP: net.IPv4(127, 0, 0, 1), Port: 9996}
+	rpc := RPCMessage{Type: "UNKNOWN", Payload: Payload{SourceContact: node.GetSelfContact(), TargetContact: node.GetSelfContact()}}
+	in := IncomingRPC{RPC: rpc, Addr: addr}
+	go server.processRequest(in)
+	// Check outgoing channel for ERROR response
+	select {
+	case out := <-server.outgoing:
+		assert.Equal(t, "ERROR", out.RPC.Type)
+		assert.Equal(t, node.GetSelfContact(), out.RPC.Payload.TargetContact)
+	case <-time.After(500 * 1e6):
+		t.Error("No ERROR response received")
 	}
 }

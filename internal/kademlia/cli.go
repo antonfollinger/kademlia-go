@@ -28,13 +28,23 @@ func (node *Node) Cli() {
 				fmt.Println("Usage: put <content>")
 				continue
 			}
-			node.Put(parts[1])
+			result, err := node.Put(parts[1])
+			if err != nil {
+				fmt.Println("Error storing content:", err)
+			} else {
+				fmt.Print(result)
+			}
 		case "get":
 			if len(parts) < 2 {
 				fmt.Println("Usage: get <hash>")
 				continue
 			}
-			node.Get(parts[1])
+			result, err := node.Get(parts[1])
+			if err != nil {
+				fmt.Println("Error retrieving content:", err)
+			} else {
+				fmt.Print(result)
+			}
 		case "exit":
 			fmt.Println("Shutting down node.")
 			return
@@ -47,20 +57,23 @@ func (node *Node) Cli() {
 	}
 }
 
-func (node *Node) Put(content string) {
+func (node *Node) Put(content string) (string, error) {
 	ans, err := node.Client.SendStoreMessage([]byte(content))
 	if err != nil {
-		fmt.Println("Error storing content:", err)
-		return
+		return "", err
 	}
-	fmt.Printf("✅ Content stored!\nHash: %s\nPacket ID: %s\n", ans.Payload.Key, ans.PacketID)
+	result := fmt.Sprintf("✅ Content stored!\nHash: %s\nPacket ID: %s\n", ans.Payload.Key, ans.PacketID)
+	return result, nil
 }
 
-func (node *Node) Get(hash string) {
+func (node *Node) Get(hash string) (string, error) {
 	ans, err := node.Client.SendFindValueMessage(hash)
 	if err != nil {
-		fmt.Println("Error retrieving content:", err)
-		return
+		return "", err
 	}
-	fmt.Printf("✅ Content retrieved!\nHash: %s\nContent: %s\nSource: %s\n", ans.Payload.Key, ans.Payload.Data, ans.Payload.SourceContact.ID.String())
+	if ans.Payload.SourceContact.ID == nil {
+		return "", fmt.Errorf("no source contact found")
+	}
+	result := fmt.Sprintf("✅ Content retrieved!\nHash: %s\nContent: %s\nSource: %s\n", ans.Payload.Key, ans.Payload.Data, ans.Payload.SourceContact.ID.String())
+	return result, nil
 }
