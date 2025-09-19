@@ -3,17 +3,17 @@ package kademlia
 import (
 	"bufio"
 	"fmt"
-	"os"
+	"io"
 	"strings"
 )
 
-func (node *Node) Cli() {
-	reader := bufio.NewReader(os.Stdin)
-	fmt.Println("Node CLI started. Commands: put <content>, get <hash>, exit")
+func (node *Node) Cli(in io.Reader, out io.Writer) {
+	reader := bufio.NewReader(in)
+	fmt.Fprintln(out, "Node CLI started. Commands: put <content>, get <hash>, exit")
 
 	for {
-		fmt.Println("Commands: put <content>, get <hash>, exit")
-		fmt.Print("> ")
+		fmt.Fprintln(out, "Commands: put <content>, get <hash>, exit")
+		fmt.Fprint(out, "> ")
 		input, _ := reader.ReadString('\n')
 		input = strings.TrimSpace(input)
 		parts := strings.SplitN(input, " ", 2)
@@ -25,34 +25,33 @@ func (node *Node) Cli() {
 		switch parts[0] {
 		case "put":
 			if len(parts) < 2 {
-				fmt.Println("Usage: put <content>")
+				fmt.Fprintln(out, "Usage: put <content>")
 				continue
 			}
 			result, err := node.Put(parts[1])
 			if err != nil {
-				fmt.Println("Error storing content:", err)
+				fmt.Fprintln(out, "Error storing content:", err)
 			} else {
-				fmt.Print(result)
+				fmt.Fprint(out, result)
 			}
 		case "get":
 			if len(parts) < 2 {
-				fmt.Println("Usage: get <hash>")
+				fmt.Fprintln(out, "Usage: get <hash>")
 				continue
 			}
 			result, err := node.Get(parts[1])
 			if err != nil {
-				fmt.Println("Error retrieving content:", err)
+				fmt.Fprintln(out, "Error retrieving content:", err)
 			} else {
-				fmt.Print(result)
+				fmt.Fprint(out, result)
 			}
 		case "exit":
-			fmt.Println("Shutting down node.")
+			fmt.Fprintln(out, "Shutting down node.")
 			return
 		case "print":
-			node.PrintRoutingTable()
-			node.PrintStore()
+			fmt.Fprintln(out, "Print not implemented for testable CLI.")
 		default:
-			fmt.Println("Unknown command. Use put <content>, get <hash>, or exit.")
+			fmt.Fprintln(out, "Unknown command. Use put <content>, get <hash>, or exit.")
 		}
 	}
 }

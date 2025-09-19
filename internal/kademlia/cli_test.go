@@ -1,10 +1,66 @@
 package kademlia
 
 import (
+	"bytes"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 )
+
+func Test_Node_Cli_PutGetExit(t *testing.T) {
+	node, _ := InitNode(true, "localhost:9100", "")
+	node.SetClient(&MockClientCLI{})
+	input := "put hello\nget testhash\nexit\n"
+	in := strings.NewReader(input)
+	out := &bytes.Buffer{}
+	node.Cli(in, out)
+	output := out.String()
+	assert.Contains(t, output, "✅ Content stored!")
+	assert.Contains(t, output, "Hash: testhash")
+	assert.Contains(t, output, "Packet ID: packet123")
+	assert.Contains(t, output, "✅ Content retrieved!")
+	assert.Contains(t, output, "Hash: testhash")
+	assert.Contains(t, output, "Content: testdata")
+	assert.Contains(t, output, "Source: 1234567891234567891234567891234567891234")
+	assert.Contains(t, output, "Shutting down node.")
+}
+
+func Test_Node_Cli_UnknownCommand(t *testing.T) {
+	node, _ := InitNode(true, "localhost:9101", "")
+	node.SetClient(&MockClientCLI{})
+	input := "foobar\nexit\n"
+	in := strings.NewReader(input)
+	out := &bytes.Buffer{}
+	node.Cli(in, out)
+	output := out.String()
+	assert.Contains(t, output, "Unknown command. Use put <content>, get <hash>, or exit.")
+	assert.Contains(t, output, "Shutting down node.")
+}
+
+func Test_Node_Cli_Put_Error(t *testing.T) {
+	node, _ := InitNode(true, "localhost:9102", "")
+	node.SetClient(&MockClientError{})
+	input := "put faildata\nexit\n"
+	in := strings.NewReader(input)
+	out := &bytes.Buffer{}
+	node.Cli(in, out)
+	output := out.String()
+	assert.Contains(t, output, "Error storing content:")
+	assert.Contains(t, output, "Shutting down node.")
+}
+
+func Test_Node_Cli_Get_Error(t *testing.T) {
+	node, _ := InitNode(true, "localhost:9103", "")
+	node.SetClient(&MockClientError{})
+	input := "get failhash\nexit\n"
+	in := strings.NewReader(input)
+	out := &bytes.Buffer{}
+	node.Cli(in, out)
+	output := out.String()
+	assert.Contains(t, output, "Error retrieving content:")
+	assert.Contains(t, output, "Shutting down node.")
+}
 
 // MockClient for CLI tests
 type MockClientCLI struct{}

@@ -53,5 +53,5 @@ func main() {
 
 	k.Server.RunServer()
 
-	k.Node.Cli()
+	k.Node.Cli(os.Stdin, os.Stdout)
 }
