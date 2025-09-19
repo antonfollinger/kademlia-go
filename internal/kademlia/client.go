@@ -239,21 +239,3 @@ func (client *Client) SendFindValueMessage(hash string) (RPCMessage, error) {
 	// If none of the contacts had the data
 	return RPCMessage{}, fmt.Errorf("FIND_VALUE not found on any contacted node")
 }
-
-// For CLI implementation
-/*
-func (client *Client) handleRPC(msg *RPCMessage) {
-	switch msg.Type {
-	case "PING":
-		client.SendPingMessage(msg)
-	case "FIND_NODE":
-		client.SendFindNodeMessage(msg)
-	case "STORE":
-		client.SendStoreMessage(msg)
-	case "FIND_VALUE":
-		client.SendFindValueMessage(msg)
-	default:
-		fmt.Println("Unknown RPC message type:", msg.Type)
-	}
-}
-*/

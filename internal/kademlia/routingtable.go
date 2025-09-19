@@ -1,7 +1,6 @@
 package kademlia
 
 import (
-	"fmt"
 	"sync"
 )
 
@@ -82,27 +81,4 @@ func (routingTable *RoutingTable) getBucketIndex(id *KademliaID) int {
 	}
 
 	return IDLength*8 - 1
-}
-
-func (routingTable *RoutingTable) RemoveContact(contact Contact) {
-	routingTable.mu.Lock()
-	defer routingTable.mu.Unlock()
-	bucketIndex := routingTable.getBucketIndex(contact.ID)
-	bucket := routingTable.buckets[bucketIndex]
-	fmt.Printf("RemoveContact not implemented yet for bucket %d (bucket size: %d)\n", bucketIndex, bucket.Len())
-}
-
-func (routingTable *RoutingTable) Print() {
-	routingTable.mu.Lock()
-	defer routingTable.mu.Unlock()
-	fmt.Println("Routing Table:")
-	for i, bucket := range routingTable.buckets {
-		if bucket.Len() > 0 {
-			fmt.Printf("Bucket %d:\n", i)
-			for e := bucket.list.Front(); e != nil; e = e.Next() {
-				contact := e.Value.(Contact)
-				fmt.Printf("  Address:%s ID: %s\n", contact.Address, contact.ID.String())
-			}
-		}
-	}
 }
