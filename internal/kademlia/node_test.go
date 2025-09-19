@@ -98,7 +98,6 @@ func Test_Node_AddContact_FullBucket_Respond(t *testing.T) {
 		id := NewKademliaID(idStr)
 		contact := Contact{ID: id, Address: fmt.Sprintf("1.2.3.4:%d", 8001+i)}
 		contacts[i] = contact
-		fmt.Println(contact)
 		node.AddContact(contact)
 	}
 	bucket := node.RoutingTable.buckets[154]

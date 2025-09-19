@@ -8,13 +8,35 @@ import (
 	"time"
 )
 
+type KademliaConfig struct {
+	SkipBootstrapPing    bool
+	BootstrapPingRetries int
+	BootstrapPingDelayMs int
+}
+
+type KademliaOption func(*KademliaConfig)
+
+func WithSkipBootstrapPing(skip bool) KademliaOption {
+	return func(cfg *KademliaConfig) {
+		cfg.SkipBootstrapPing = skip
+	}
+}
+
 type Kademlia struct {
 	Node   *Node
 	Server *Server
 	Client *Client
 }
 
-func InitKademlia(port string, bootstrap bool, bootstrapIP string) (*Kademlia, error) {
+func InitKademlia(port string, bootstrap bool, bootstrapIP string, opts ...KademliaOption) (*Kademlia, error) {
+	cfg := &KademliaConfig{
+		SkipBootstrapPing:    false,
+		BootstrapPingRetries: 5,
+		BootstrapPingDelayMs: 2000,
+	}
+	for _, opt := range opts {
+		opt(cfg)
+	}
 
 	k := &Kademlia{}
 	ip := GetLocalIP() + ":" + port
@@ -47,20 +69,20 @@ func InitKademlia(port string, bootstrap bool, bootstrapIP string) (*Kademlia, e
 
 	bootstrapID := NewKademliaID("0000000000000000000000000000000000000000")
 
-	if !k.Node.RoutingTable.me.ID.Equals(bootstrapID) {
+	if !k.Node.RoutingTable.me.ID.Equals(bootstrapID) && !cfg.SkipBootstrapPing {
 
 		// Random delay to reduce package drops
-		time.Sleep(time.Duration(rand.Intn(3000)) * time.Millisecond)
+		time.Sleep(time.Duration(rand.Intn(cfg.BootstrapPingDelayMs)) * time.Millisecond)
 
 		// Retry pinging bootstrap a few times
 		var err1 error
-		for i := 0; i < 5; i++ {
+		for i := 0; i < cfg.BootstrapPingRetries; i++ {
 			c := k.Node.RoutingTable.FindClosestContacts(bootstrapID, 1)[0]
 			_, err1 = k.Client.SendPingMessage(c)
 			if err1 == nil {
 				break
 			}
-			time.Sleep(time.Duration(rand.Intn(2000)) * time.Millisecond)
+			time.Sleep(time.Duration(rand.Intn(cfg.BootstrapPingDelayMs)) * time.Millisecond)
 		}
 		if err1 != nil {
 			println("failed to ping bootstrap node")

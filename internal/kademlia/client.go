@@ -154,10 +154,8 @@ func (client *Client) SendStoreMessage(data []byte) (RPCMessage, error) {
 	// Find closest nodes to the generated key
 	closest, err := client.node.IterativeFindNode(key)
 	if err != nil || len(closest) == 0 {
-		return RPCMessage{}, err
+		return RPCMessage{}, fmt.Errorf("no nodes found to store data")
 	}
-
-	fmt.Println("SendStoreClosest:", closest)
 
 	k := alpha // minimum number of nodes to store
 	storedCount := 0
@@ -191,8 +189,9 @@ func (client *Client) SendStoreMessage(data []byte) (RPCMessage, error) {
 	if storedCount > 0 {
 		return lastResp, nil
 	}
+
 	// If fewer than k nodes stored the data
-	return RPCMessage{}, fmt.Errorf("data could not be stored on any nodes", k)
+	return RPCMessage{}, fmt.Errorf("data could not be stored on any nodes")
 }
 
 // When part of a network with uploaded objects, it must be possible to find and
