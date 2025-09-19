@@ -49,7 +49,6 @@ func (client *Client) listen() {
 		if err != nil {
 			continue
 		}
-		//fmt.Printf("Client found RPC from %v, bytes read: %d\n\n", addr, n)
 		var resp RPCMessage
 		if err := json.Unmarshal(buf[:n], &resp); err != nil {
 			continue
@@ -108,7 +107,7 @@ func (client *Client) SendPingMessage(target Contact) (RPCMessage, error) {
 		client.node.AddContact(resp.Payload.SourceContact)
 		fmt.Println("PING response received")
 		return resp, nil
-	case <-time.After(2 * time.Second):
+	case <-time.After(5 * time.Second):
 		return RPCMessage{}, fmt.Errorf("PING Timeout")
 	}
 }

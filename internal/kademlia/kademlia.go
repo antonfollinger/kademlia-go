@@ -2,8 +2,10 @@ package kademlia
 
 import (
 	"fmt"
+	"math/rand"
 	"net"
 	"os"
+	"time"
 )
 
 type Kademlia struct {
@@ -47,27 +49,28 @@ func InitKademlia(port string, bootstrap bool, bootstrapIP string) (*Kademlia, e
 
 	if !k.Node.RoutingTable.me.ID.Equals(bootstrapID) {
 
-		_, err1 := k.Client.SendPingMessage(k.Node.RoutingTable.FindClosestContacts(bootstrapID, 1)[0])
-		if err1 != nil {
-			fmt.Printf("JoinNetwork: Unable to reach bootstrap node: %v\n", err1)
+		// Random delay to reduce package drops
+		time.Sleep(time.Duration(rand.Intn(3000)) * time.Millisecond)
 
-			// Retry pinging bootstrap a few times
-			for i := 0; i < 4; i++ {
-				_, err1 = k.Client.SendPingMessage(k.Node.RoutingTable.FindClosestContacts(bootstrapID, 1)[0])
-				if err1 == nil {
-					break
-				}
+		// Retry pinging bootstrap a few times
+		var err1 error
+		for i := 0; i < 5; i++ {
+			c := k.Node.RoutingTable.FindClosestContacts(bootstrapID, 1)[0]
+			_, err1 = k.Client.SendPingMessage(c)
+			if err1 == nil {
+				break
 			}
-			if err1 != nil {
-				return k, err1
-			}
+			time.Sleep(time.Duration(rand.Intn(2000)) * time.Millisecond)
 		}
-
+		if err1 != nil {
+			println("failed to ping bootstrap node")
+		}
 	}
+
 	// Integrate JoinNetwork for both bootstrap and peer nodes
 	err := k.Node.JoinNetwork()
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Failed to join network: %v\n", err)
+		fmt.Fprintf(os.Stderr, "failed to join network: %v\n", err)
 	}
 
 	return k, nil

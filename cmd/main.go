@@ -53,10 +53,5 @@ func main() {
 
 	k.Server.RunServer()
 
-	time.Sleep(15 * time.Second)
-	k.Node.PrintRoutingTable()
-
 	k.Node.Cli()
-
-	//select {} // keep running
 }

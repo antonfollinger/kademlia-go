@@ -17,8 +17,8 @@ type OutgoingRPC struct {
 }
 
 const (
-	IncomingBufferSize int = 4096
-	OutgoingBufferSize int = 1024
+	IncomingBufferSize int = 8192
+	OutgoingBufferSize int = 8192
 )
 
 type Server struct {
@@ -57,14 +57,13 @@ func (s *Server) RunServer() {
 }
 
 func (s *Server) listen() {
-	buf := make([]byte, 4096)
+	buf := make([]byte, IncomingBufferSize)
 	for {
 		n, addr, err := s.conn.ReadFromUDP(buf)
 		if err != nil {
 			fmt.Println("listen error:", err)
 			continue
 		}
-		//fmt.Printf("Server found RPC from %v, bytes read: %d\n\n", addr, n)
 		var rpc RPCMessage
 
 		if err := json.Unmarshal(buf[:n], &rpc); err != nil {
@@ -72,56 +71,64 @@ func (s *Server) listen() {
 			continue
 		}
 		if rpc.Query {
-			//fmt.Printf("SERVER RPC INFO: %+v\n\n", rpc)
-			s.incoming <- IncomingRPC{RPC: rpc, Addr: addr}
+			select {
+			case s.incoming <- IncomingRPC{RPC: rpc, Addr: addr}:
+				// Packet accepted
+			default:
+				fmt.Printf("DROPPED PACKET from %v: incoming channel overflow\n", addr)
+			}
 		}
 	}
 }
 
 func (s *Server) handleIncoming() {
 	for in := range s.incoming {
-		var resp RPCMessage
-		switch in.RPC.Type {
-		case "PING":
-			resp = *NewRPCMessage("PONG", Payload{
-				TargetContact: in.RPC.Payload.SourceContact,
-			}, false)
-		case "FIND_NODE":
-			target := NewKademliaID(in.RPC.Payload.Key)
-			contacts := s.node.LookupClosestContacts(NewContact(target, ""))
-			resp = *NewRPCMessage("FIND_NODE", Payload{
-				Contacts:      contacts,
-				TargetContact: in.RPC.Payload.SourceContact,
-			}, false)
-		case "STORE":
-			s.node.Store(in.RPC.Payload.Key, in.RPC.Payload.Data)
-			contacts := s.node.GetSelfContact()
-			resp = *NewRPCMessage("STORE", Payload{
-				Contacts:      []Contact{contacts},
-				TargetContact: in.RPC.Payload.SourceContact,
-				Key:           in.RPC.Payload.Key,
-			}, false)
-		case "FIND_VALUE":
-			value := s.node.LookupData(in.RPC.Payload.Key)
-			resp = *NewRPCMessage("FIND_VALUE", Payload{
-				Data:          value,
-				TargetContact: in.RPC.Payload.SourceContact,
-			}, false)
-		default:
-			resp = *NewRPCMessage("ERROR", Payload{TargetContact: in.RPC.Payload.TargetContact}, false)
-		}
-
-		// Add the requesting node
-		s.node.AddContact(in.RPC.Payload.SourceContact)
-
-		// Ensure same PID
-		PID := in.RPC.PacketID
-		resp.PacketID = PID
-
-		resp.Payload.SourceContact = s.node.GetSelfContact()
-
-		s.outgoing <- OutgoingRPC{RPC: resp, Addr: in.Addr}
+		go s.processRequest(in)
 	}
+}
+
+func (s *Server) processRequest(in IncomingRPC) {
+	var resp RPCMessage
+	switch in.RPC.Type {
+	case "PING":
+		resp = *NewRPCMessage("PONG", Payload{
+			TargetContact: in.RPC.Payload.SourceContact,
+		}, false)
+	case "FIND_NODE":
+		target := NewKademliaID(in.RPC.Payload.Key)
+		contacts := s.node.LookupClosestContacts(NewContact(target, ""))
+		resp = *NewRPCMessage("FIND_NODE", Payload{
+			Contacts:      contacts,
+			TargetContact: in.RPC.Payload.SourceContact,
+		}, false)
+	case "STORE":
+		s.node.Store(in.RPC.Payload.Key, in.RPC.Payload.Data)
+		contacts := s.node.GetSelfContact()
+		resp = *NewRPCMessage("STORE", Payload{
+			Contacts:      []Contact{contacts},
+			TargetContact: in.RPC.Payload.SourceContact,
+			Key:           in.RPC.Payload.Key,
+		}, false)
+	case "FIND_VALUE":
+		value := s.node.LookupData(in.RPC.Payload.Key)
+		resp = *NewRPCMessage("FIND_VALUE", Payload{
+			Data:          value,
+			TargetContact: in.RPC.Payload.SourceContact,
+		}, false)
+	default:
+		resp = *NewRPCMessage("ERROR", Payload{TargetContact: in.RPC.Payload.TargetContact}, false)
+	}
+
+	// Add the requesting node
+	s.node.AddContact(in.RPC.Payload.SourceContact)
+
+	// Ensure same PID
+	PID := in.RPC.PacketID
+	resp.PacketID = PID
+
+	resp.Payload.SourceContact = s.node.GetSelfContact()
+
+	s.outgoing <- OutgoingRPC{RPC: resp, Addr: in.Addr}
 }
 
 func (s *Server) respond() {

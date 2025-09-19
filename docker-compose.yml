@@ -1,7 +1,6 @@
 services:
   node1:
     build: .
-    image: kademlia_node
     environment:
       - PORT=9001
       - ISBOOTSTRAP=TRUE
@@ -10,443 +9,1091 @@ services:
     tty: true
     networks: [testnet]
   node2:
-    image: kademlia_node
+    build: .
     environment:
       - PORT=9002
       - BOOTSTRAPNODE=node1
       - ISBOOTSTRAP=FALSE
+    depends_on:
+      - node1
     stdin_open: true
     tty: true
     networks: [testnet]
   node3:
-    image: kademlia_node
+    build: .
     environment:
       - PORT=9003
       - BOOTSTRAPNODE=node1
       - ISBOOTSTRAP=FALSE
+    depends_on:
+      - node1
     stdin_open: true
     tty: true
     networks: [testnet]
   node4:
-    image: kademlia_node
+    build: .
     environment:
       - PORT=9004
       - BOOTSTRAPNODE=node1
       - ISBOOTSTRAP=FALSE
+    depends_on:
+      - node1
     stdin_open: true
     tty: true
     networks: [testnet]
   node5:
-    image: kademlia_node
+    build: .
     environment:
       - PORT=9005
       - BOOTSTRAPNODE=node1
       - ISBOOTSTRAP=FALSE
+    depends_on:
+      - node1
     stdin_open: true
     tty: true
     networks: [testnet]
   node6:
-    image: kademlia_node
+    build: .
     environment:
       - PORT=9006
       - BOOTSTRAPNODE=node1
       - ISBOOTSTRAP=FALSE
+    depends_on:
+      - node1
     stdin_open: true
     tty: true
     networks: [testnet]
   node7:
-    image: kademlia_node
+    build: .
     environment:
       - PORT=9007
       - BOOTSTRAPNODE=node1
       - ISBOOTSTRAP=FALSE
+    depends_on:
+      - node1
     stdin_open: true
     tty: true
     networks: [testnet]
   node8:
-    image: kademlia_node
+    build: .
     environment:
       - PORT=9008
       - BOOTSTRAPNODE=node1
       - ISBOOTSTRAP=FALSE
+    depends_on:
+      - node1
     stdin_open: true
     tty: true
     networks: [testnet]
   node9:
-    image: kademlia_node
+    build: .
     environment:
       - PORT=9009
       - BOOTSTRAPNODE=node1
       - ISBOOTSTRAP=FALSE
+    depends_on:
+      - node1
     stdin_open: true
     tty: true
     networks: [testnet]
   node10:
-    image: kademlia_node
+    build: .
     environment:
       - PORT=9010
       - BOOTSTRAPNODE=node1
       - ISBOOTSTRAP=FALSE
+    depends_on:
+      - node1
     stdin_open: true
     tty: true
     networks: [testnet]
   node11:
-    image: kademlia_node
+    build: .
     environment:
       - PORT=9011
       - BOOTSTRAPNODE=node1
       - ISBOOTSTRAP=FALSE
+    depends_on:
+      - node1
     stdin_open: true
     tty: true
     networks: [testnet]
   node12:
-    image: kademlia_node
+    build: .
     environment:
       - PORT=9012
       - BOOTSTRAPNODE=node1
       - ISBOOTSTRAP=FALSE
+    depends_on:
+      - node1
     stdin_open: true
     tty: true
     networks: [testnet]
   node13:
-    image: kademlia_node
+    build: .
     environment:
       - PORT=9013
       - BOOTSTRAPNODE=node1
       - ISBOOTSTRAP=FALSE
+    depends_on:
+      - node1
     stdin_open: true
     tty: true
     networks: [testnet]
   node14:
-    image: kademlia_node
+    build: .
     environment:
       - PORT=9014
       - BOOTSTRAPNODE=node1
       - ISBOOTSTRAP=FALSE
+    depends_on:
+      - node1
     stdin_open: true
     tty: true
     networks: [testnet]
   node15:
-    image: kademlia_node
+    build: .
     environment:
       - PORT=9015
       - BOOTSTRAPNODE=node1
       - ISBOOTSTRAP=FALSE
+    depends_on:
+      - node1
     stdin_open: true
     tty: true
     networks: [testnet]
   node16:
-    image: kademlia_node
+    build: .
     environment:
       - PORT=9016
       - BOOTSTRAPNODE=node1
       - ISBOOTSTRAP=FALSE
+    depends_on:
+      - node1
     stdin_open: true
     tty: true
     networks: [testnet]
   node17:
-    image: kademlia_node
+    build: .
     environment:
       - PORT=9017
       - BOOTSTRAPNODE=node1
       - ISBOOTSTRAP=FALSE
+    depends_on:
+      - node1
     stdin_open: true
     tty: true
     networks: [testnet]
   node18:
-    image: kademlia_node
+    build: .
     environment:
       - PORT=9018
       - BOOTSTRAPNODE=node1
       - ISBOOTSTRAP=FALSE
+    depends_on:
+      - node1
     stdin_open: true
     tty: true
     networks: [testnet]
   node19:
-    image: kademlia_node
+    build: .
     environment:
       - PORT=9019
       - BOOTSTRAPNODE=node1
       - ISBOOTSTRAP=FALSE
+    depends_on:
+      - node1
     stdin_open: true
     tty: true
     networks: [testnet]
   node20:
-    image: kademlia_node
+    build: .
     environment:
       - PORT=9020
       - BOOTSTRAPNODE=node1
       - ISBOOTSTRAP=FALSE
+    depends_on:
+      - node1
     stdin_open: true
     tty: true
     networks: [testnet]
   node21:
-    image: kademlia_node
+    build: .
     environment:
       - PORT=9021
       - BOOTSTRAPNODE=node1
       - ISBOOTSTRAP=FALSE
+    depends_on:
+      - node1
     stdin_open: true
     tty: true
     networks: [testnet]
   node22:
-    image: kademlia_node
+    build: .
     environment:
       - PORT=9022
       - BOOTSTRAPNODE=node1
       - ISBOOTSTRAP=FALSE
+    depends_on:
+      - node1
     stdin_open: true
     tty: true
     networks: [testnet]
   node23:
-    image: kademlia_node
+    build: .
     environment:
       - PORT=9023
       - BOOTSTRAPNODE=node1
       - ISBOOTSTRAP=FALSE
+    depends_on:
+      - node1
     stdin_open: true
     tty: true
     networks: [testnet]
   node24:
-    image: kademlia_node
+    build: .
     environment:
       - PORT=9024
       - BOOTSTRAPNODE=node1
       - ISBOOTSTRAP=FALSE
+    depends_on:
+      - node1
     stdin_open: true
     tty: true
     networks: [testnet]
   node25:
-    image: kademlia_node
+    build: .
     environment:
       - PORT=9025
       - BOOTSTRAPNODE=node1
       - ISBOOTSTRAP=FALSE
+    depends_on:
+      - node1
     stdin_open: true
     tty: true
     networks: [testnet]
   node26:
-    image: kademlia_node
+    build: .
     environment:
       - PORT=9026
       - BOOTSTRAPNODE=node1
       - ISBOOTSTRAP=FALSE
+    depends_on:
+      - node1
     stdin_open: true
     tty: true
     networks: [testnet]
   node27:
-    image: kademlia_node
+    build: .
     environment:
       - PORT=9027
       - BOOTSTRAPNODE=node1
       - ISBOOTSTRAP=FALSE
+    depends_on:
+      - node1
     stdin_open: true
     tty: true
     networks: [testnet]
   node28:
-    image: kademlia_node
+    build: .
     environment:
       - PORT=9028
       - BOOTSTRAPNODE=node1
       - ISBOOTSTRAP=FALSE
+    depends_on:
+      - node1
     stdin_open: true
     tty: true
     networks: [testnet]
   node29:
-    image: kademlia_node
+    build: .
     environment:
       - PORT=9029
       - BOOTSTRAPNODE=node1
       - ISBOOTSTRAP=FALSE
+    depends_on:
+      - node1
     stdin_open: true
     tty: true
     networks: [testnet]
   node30:
-    image: kademlia_node
+    build: .
     environment:
       - PORT=9030
       - BOOTSTRAPNODE=node1
       - ISBOOTSTRAP=FALSE
+    depends_on:
+      - node1
     stdin_open: true
     tty: true
     networks: [testnet]
   node31:
-    image: kademlia_node
+    build: .
     environment:
       - PORT=9031
       - BOOTSTRAPNODE=node1
       - ISBOOTSTRAP=FALSE
+    depends_on:
+      - node1
     stdin_open: true
     tty: true
     networks: [testnet]
   node32:
-    image: kademlia_node
+    build: .
     environment:
       - PORT=9032
       - BOOTSTRAPNODE=node1
       - ISBOOTSTRAP=FALSE
+    depends_on:
+      - node1
     stdin_open: true
     tty: true
     networks: [testnet]
   node33:
-    image: kademlia_node
+    build: .
     environment:
       - PORT=9033
       - BOOTSTRAPNODE=node1
       - ISBOOTSTRAP=FALSE
+    depends_on:
+      - node1
     stdin_open: true
     tty: true
     networks: [testnet]
   node34:
-    image: kademlia_node
+    build: .
     environment:
       - PORT=9034
       - BOOTSTRAPNODE=node1
       - ISBOOTSTRAP=FALSE
+    depends_on:
+      - node1
     stdin_open: true
     tty: true
     networks: [testnet]
   node35:
-    image: kademlia_node
+    build: .
     environment:
       - PORT=9035
       - BOOTSTRAPNODE=node1
       - ISBOOTSTRAP=FALSE
+    depends_on:
+      - node1
     stdin_open: true
     tty: true
     networks: [testnet]
   node36:
-    image: kademlia_node
+    build: .
     environment:
       - PORT=9036
       - BOOTSTRAPNODE=node1
       - ISBOOTSTRAP=FALSE
+    depends_on:
+      - node1
     stdin_open: true
     tty: true
     networks: [testnet]
   node37:
-    image: kademlia_node
+    build: .
     environment:
       - PORT=9037
       - BOOTSTRAPNODE=node1
       - ISBOOTSTRAP=FALSE
+    depends_on:
+      - node1
     stdin_open: true
     tty: true
     networks: [testnet]
   node38:
-    image: kademlia_node
+    build: .
     environment:
       - PORT=9038
       - BOOTSTRAPNODE=node1
       - ISBOOTSTRAP=FALSE
+    depends_on:
+      - node1
     stdin_open: true
     tty: true
     networks: [testnet]
   node39:
-    image: kademlia_node
+    build: .
     environment:
       - PORT=9039
       - BOOTSTRAPNODE=node1
       - ISBOOTSTRAP=FALSE
+    depends_on:
+      - node1
     stdin_open: true
     tty: true
     networks: [testnet]
   node40:
-    image: kademlia_node
+    build: .
     environment:
       - PORT=9040
       - BOOTSTRAPNODE=node1
       - ISBOOTSTRAP=FALSE
+    depends_on:
+      - node1
     stdin_open: true
     tty: true
     networks: [testnet]
   node41:
-    image: kademlia_node
+    build: .
     environment:
       - PORT=9041
       - BOOTSTRAPNODE=node1
       - ISBOOTSTRAP=FALSE
+    depends_on:
+      - node1
     stdin_open: true
     tty: true
     networks: [testnet]
   node42:
-    image: kademlia_node
+    build: .
     environment:
       - PORT=9042
       - BOOTSTRAPNODE=node1
       - ISBOOTSTRAP=FALSE
+    depends_on:
+      - node1
     stdin_open: true
     tty: true
     networks: [testnet]
   node43:
-    image: kademlia_node
+    build: .
     environment:
       - PORT=9043
       - BOOTSTRAPNODE=node1
       - ISBOOTSTRAP=FALSE
+    depends_on:
+      - node1
     stdin_open: true
     tty: true
     networks: [testnet]
   node44:
-    image: kademlia_node
+    build: .
     environment:
       - PORT=9044
       - BOOTSTRAPNODE=node1
       - ISBOOTSTRAP=FALSE
+    depends_on:
+      - node1
     stdin_open: true
     tty: true
     networks: [testnet]
   node45:
-    image: kademlia_node
+    build: .
     environment:
       - PORT=9045
       - BOOTSTRAPNODE=node1
       - ISBOOTSTRAP=FALSE
+    depends_on:
+      - node1
     stdin_open: true
     tty: true
     networks: [testnet]
   node46:
-    image: kademlia_node
+    build: .
     environment:
       - PORT=9046
       - BOOTSTRAPNODE=node1
       - ISBOOTSTRAP=FALSE
+    depends_on:
+      - node1
     stdin_open: true
     tty: true
     networks: [testnet]
   node47:
-    image: kademlia_node
+    build: .
     environment:
       - PORT=9047
       - BOOTSTRAPNODE=node1
       - ISBOOTSTRAP=FALSE
+    depends_on:
+      - node1
     stdin_open: true
     tty: true
     networks: [testnet]
   node48:
-    image: kademlia_node
+    build: .
     environment:
       - PORT=9048
       - BOOTSTRAPNODE=node1
       - ISBOOTSTRAP=FALSE
+    depends_on:
+      - node1
     stdin_open: true
     tty: true
     networks: [testnet]
   node49:
-    image: kademlia_node
+    build: .
     environment:
       - PORT=9049
       - BOOTSTRAPNODE=node1
       - ISBOOTSTRAP=FALSE
+    depends_on:
+      - node1
     stdin_open: true
     tty: true
     networks: [testnet]
   node50:
-    image: kademlia_node
+    build: .
     environment:
       - PORT=9050
       - BOOTSTRAPNODE=node1
       - ISBOOTSTRAP=FALSE
+    depends_on:
+      - node1
+    stdin_open: true
+    tty: true
+    networks: [testnet]
+  node51:
+    build: .
+    environment:
+      - PORT=9051
+      - BOOTSTRAPNODE=node1
+      - ISBOOTSTRAP=FALSE
+    depends_on:
+      - node1
+    stdin_open: true
+    tty: true
+    networks: [testnet]
+  node52:
+    build: .
+    environment:
+      - PORT=9052
+      - BOOTSTRAPNODE=node1
+      - ISBOOTSTRAP=FALSE
+    depends_on:
+      - node1
+    stdin_open: true
+    tty: true
+    networks: [testnet]
+  node53:
+    build: .
+    environment:
+      - PORT=9053
+      - BOOTSTRAPNODE=node1
+      - ISBOOTSTRAP=FALSE
+    depends_on:
+      - node1
+    stdin_open: true
+    tty: true
+    networks: [testnet]
+  node54:
+    build: .
+    environment:
+      - PORT=9054
+      - BOOTSTRAPNODE=node1
+      - ISBOOTSTRAP=FALSE
+    depends_on:
+      - node1
+    stdin_open: true
+    tty: true
+    networks: [testnet]
+  node55:
+    build: .
+    environment:
+      - PORT=9055
+      - BOOTSTRAPNODE=node1
+      - ISBOOTSTRAP=FALSE
+    depends_on:
+      - node1
+    stdin_open: true
+    tty: true
+    networks: [testnet]
+  node56:
+    build: .
+    environment:
+      - PORT=9056
+      - BOOTSTRAPNODE=node1
+      - ISBOOTSTRAP=FALSE
+    depends_on:
+      - node1
+    stdin_open: true
+    tty: true
+    networks: [testnet]
+  node57:
+    build: .
+    environment:
+      - PORT=9057
+      - BOOTSTRAPNODE=node1
+      - ISBOOTSTRAP=FALSE
+    depends_on:
+      - node1
+    stdin_open: true
+    tty: true
+    networks: [testnet]
+  node58:
+    build: .
+    environment:
+      - PORT=9058
+      - BOOTSTRAPNODE=node1
+      - ISBOOTSTRAP=FALSE
+    depends_on:
+      - node1
+    stdin_open: true
+    tty: true
+    networks: [testnet]
+  node59:
+    build: .
+    environment:
+      - PORT=9059
+      - BOOTSTRAPNODE=node1
+      - ISBOOTSTRAP=FALSE
+    depends_on:
+      - node1
+    stdin_open: true
+    tty: true
+    networks: [testnet]
+  node60:
+    build: .
+    environment:
+      - PORT=9060
+      - BOOTSTRAPNODE=node1
+      - ISBOOTSTRAP=FALSE
+    depends_on:
+      - node1
+    stdin_open: true
+    tty: true
+    networks: [testnet]
+  node61:
+    build: .
+    environment:
+      - PORT=9061
+      - BOOTSTRAPNODE=node1
+      - ISBOOTSTRAP=FALSE
+    depends_on:
+      - node1
+    stdin_open: true
+    tty: true
+    networks: [testnet]
+  node62:
+    build: .
+    environment:
+      - PORT=9062
+      - BOOTSTRAPNODE=node1
+      - ISBOOTSTRAP=FALSE
+    depends_on:
+      - node1
+    stdin_open: true
+    tty: true
+    networks: [testnet]
+  node63:
+    build: .
+    environment:
+      - PORT=9063
+      - BOOTSTRAPNODE=node1
+      - ISBOOTSTRAP=FALSE
+    depends_on:
+      - node1
+    stdin_open: true
+    tty: true
+    networks: [testnet]
+  node64:
+    build: .
+    environment:
+      - PORT=9064
+      - BOOTSTRAPNODE=node1
+      - ISBOOTSTRAP=FALSE
+    depends_on:
+      - node1
+    stdin_open: true
+    tty: true
+    networks: [testnet]
+  node65:
+    build: .
+    environment:
+      - PORT=9065
+      - BOOTSTRAPNODE=node1
+      - ISBOOTSTRAP=FALSE
+    depends_on:
+      - node1
+    stdin_open: true
+    tty: true
+    networks: [testnet]
+  node66:
+    build: .
+    environment:
+      - PORT=9066
+      - BOOTSTRAPNODE=node1
+      - ISBOOTSTRAP=FALSE
+    depends_on:
+      - node1
+    stdin_open: true
+    tty: true
+    networks: [testnet]
+  node67:
+    build: .
+    environment:
+      - PORT=9067
+      - BOOTSTRAPNODE=node1
+      - ISBOOTSTRAP=FALSE
+    depends_on:
+      - node1
+    stdin_open: true
+    tty: true
+    networks: [testnet]
+  node68:
+    build: .
+    environment:
+      - PORT=9068
+      - BOOTSTRAPNODE=node1
+      - ISBOOTSTRAP=FALSE
+    depends_on:
+      - node1
+    stdin_open: true
+    tty: true
+    networks: [testnet]
+  node69:
+    build: .
+    environment:
+      - PORT=9069
+      - BOOTSTRAPNODE=node1
+      - ISBOOTSTRAP=FALSE
+    depends_on:
+      - node1
+    stdin_open: true
+    tty: true
+    networks: [testnet]
+  node70:
+    build: .
+    environment:
+      - PORT=9070
+      - BOOTSTRAPNODE=node1
+      - ISBOOTSTRAP=FALSE
+    depends_on:
+      - node1
+    stdin_open: true
+    tty: true
+    networks: [testnet]
+  node71:
+    build: .
+    environment:
+      - PORT=9071
+      - BOOTSTRAPNODE=node1
+      - ISBOOTSTRAP=FALSE
+    depends_on:
+      - node1
+    stdin_open: true
+    tty: true
+    networks: [testnet]
+  node72:
+    build: .
+    environment:
+      - PORT=9072
+      - BOOTSTRAPNODE=node1
+      - ISBOOTSTRAP=FALSE
+    depends_on:
+      - node1
+    stdin_open: true
+    tty: true
+    networks: [testnet]
+  node73:
+    build: .
+    environment:
+      - PORT=9073
+      - BOOTSTRAPNODE=node1
+      - ISBOOTSTRAP=FALSE
+    depends_on:
+      - node1
+    stdin_open: true
+    tty: true
+    networks: [testnet]
+  node74:
+    build: .
+    environment:
+      - PORT=9074
+      - BOOTSTRAPNODE=node1
+      - ISBOOTSTRAP=FALSE
+    depends_on:
+      - node1
+    stdin_open: true
+    tty: true
+    networks: [testnet]
+  node75:
+    build: .
+    environment:
+      - PORT=9075
+      - BOOTSTRAPNODE=node1
+      - ISBOOTSTRAP=FALSE
+    depends_on:
+      - node1
+    stdin_open: true
+    tty: true
+    networks: [testnet]
+  node76:
+    build: .
+    environment:
+      - PORT=9076
+      - BOOTSTRAPNODE=node1
+      - ISBOOTSTRAP=FALSE
+    depends_on:
+      - node1
+    stdin_open: true
+    tty: true
+    networks: [testnet]
+  node77:
+    build: .
+    environment:
+      - PORT=9077
+      - BOOTSTRAPNODE=node1
+      - ISBOOTSTRAP=FALSE
+    depends_on:
+      - node1
+    stdin_open: true
+    tty: true
+    networks: [testnet]
+  node78:
+    build: .
+    environment:
+      - PORT=9078
+      - BOOTSTRAPNODE=node1
+      - ISBOOTSTRAP=FALSE
+    depends_on:
+      - node1
+    stdin_open: true
+    tty: true
+    networks: [testnet]
+  node79:
+    build: .
+    environment:
+      - PORT=9079
+      - BOOTSTRAPNODE=node1
+      - ISBOOTSTRAP=FALSE
+    depends_on:
+      - node1
+    stdin_open: true
+    tty: true
+    networks: [testnet]
+  node80:
+    build: .
+    environment:
+      - PORT=9080
+      - BOOTSTRAPNODE=node1
+      - ISBOOTSTRAP=FALSE
+    depends_on:
+      - node1
+    stdin_open: true
+    tty: true
+    networks: [testnet]
+  node81:
+    build: .
+    environment:
+      - PORT=9081
+      - BOOTSTRAPNODE=node1
+      - ISBOOTSTRAP=FALSE
+    depends_on:
+      - node1
+    stdin_open: true
+    tty: true
+    networks: [testnet]
+  node82:
+    build: .
+    environment:
+      - PORT=9082
+      - BOOTSTRAPNODE=node1
+      - ISBOOTSTRAP=FALSE
+    depends_on:
+      - node1
+    stdin_open: true
+    tty: true
+    networks: [testnet]
+  node83:
+    build: .
+    environment:
+      - PORT=9083
+      - BOOTSTRAPNODE=node1
+      - ISBOOTSTRAP=FALSE
+    depends_on:
+      - node1
+    stdin_open: true
+    tty: true
+    networks: [testnet]
+  node84:
+    build: .
+    environment:
+      - PORT=9084
+      - BOOTSTRAPNODE=node1
+      - ISBOOTSTRAP=FALSE
+    depends_on:
+      - node1
+    stdin_open: true
+    tty: true
+    networks: [testnet]
+  node85:
+    build: .
+    environment:
+      - PORT=9085
+      - BOOTSTRAPNODE=node1
+      - ISBOOTSTRAP=FALSE
+    depends_on:
+      - node1
+    stdin_open: true
+    tty: true
+    networks: [testnet]
+  node86:
+    build: .
+    environment:
+      - PORT=9086
+      - BOOTSTRAPNODE=node1
+      - ISBOOTSTRAP=FALSE
+    depends_on:
+      - node1
+    stdin_open: true
+    tty: true
+    networks: [testnet]
+  node87:
+    build: .
+    environment:
+      - PORT=9087
+      - BOOTSTRAPNODE=node1
+      - ISBOOTSTRAP=FALSE
+    depends_on:
+      - node1
+    stdin_open: true
+    tty: true
+    networks: [testnet]
+  node88:
+    build: .
+    environment:
+      - PORT=9088
+      - BOOTSTRAPNODE=node1
+      - ISBOOTSTRAP=FALSE
+    depends_on:
+      - node1
+    stdin_open: true
+    tty: true
+    networks: [testnet]
+  node89:
+    build: .
+    environment:
+      - PORT=9089
+      - BOOTSTRAPNODE=node1
+      - ISBOOTSTRAP=FALSE
+    depends_on:
+      - node1
+    stdin_open: true
+    tty: true
+    networks: [testnet]
+  node90:
+    build: .
+    environment:
+      - PORT=9090
+      - BOOTSTRAPNODE=node1
+      - ISBOOTSTRAP=FALSE
+    depends_on:
+      - node1
+    stdin_open: true
+    tty: true
+    networks: [testnet]
+  node91:
+    build: .
+    environment:
+      - PORT=9091
+      - BOOTSTRAPNODE=node1
+      - ISBOOTSTRAP=FALSE
+    depends_on:
+      - node1
+    stdin_open: true
+    tty: true
+    networks: [testnet]
+  node92:
+    build: .
+    environment:
+      - PORT=9092
+      - BOOTSTRAPNODE=node1
+      - ISBOOTSTRAP=FALSE
+    depends_on:
+      - node1
+    stdin_open: true
+    tty: true
+    networks: [testnet]
+  node93:
+    build: .
+    environment:
+      - PORT=9093
+      - BOOTSTRAPNODE=node1
+      - ISBOOTSTRAP=FALSE
+    depends_on:
+      - node1
+    stdin_open: true
+    tty: true
+    networks: [testnet]
+  node94:
+    build: .
+    environment:
+      - PORT=9094
+      - BOOTSTRAPNODE=node1
+      - ISBOOTSTRAP=FALSE
+    depends_on:
+      - node1
+    stdin_open: true
+    tty: true
+    networks: [testnet]
+  node95:
+    build: .
+    environment:
+      - PORT=9095
+      - BOOTSTRAPNODE=node1
+      - ISBOOTSTRAP=FALSE
+    depends_on:
+      - node1
+    stdin_open: true
+    tty: true
+    networks: [testnet]
+  node96:
+    build: .
+    environment:
+      - PORT=9096
+      - BOOTSTRAPNODE=node1
+      - ISBOOTSTRAP=FALSE
+    depends_on:
+      - node1
+    stdin_open: true
+    tty: true
+    networks: [testnet]
+  node97:
+    build: .
+    environment:
+      - PORT=9097
+      - BOOTSTRAPNODE=node1
+      - ISBOOTSTRAP=FALSE
+    depends_on:
+      - node1
+    stdin_open: true
+    tty: true
+    networks: [testnet]
+  node98:
+    build: .
+    environment:
+      - PORT=9098
+      - BOOTSTRAPNODE=node1
+      - ISBOOTSTRAP=FALSE
+    depends_on:
+      - node1
+    stdin_open: true
+    tty: true
+    networks: [testnet]
+  node99:
+    build: .
+    environment:
+      - PORT=9099
+      - BOOTSTRAPNODE=node1
+      - ISBOOTSTRAP=FALSE
+    depends_on:
+      - node1
+    stdin_open: true
+    tty: true
+    networks: [testnet]
+  node100:
+    build: .
+    environment:
+      - PORT=9100
+      - BOOTSTRAPNODE=node1
+      - ISBOOTSTRAP=FALSE
+    depends_on:
+      - node1
     stdin_open: true
     tty: true
     networks: [testnet]
