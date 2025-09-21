@@ -3,6 +3,7 @@ package kademlia
 import (
 	"encoding/json"
 	"fmt"
+	"log"
 	"net"
 )
 
@@ -35,7 +36,7 @@ func InitServer(node NodeAPI, network Network) (*Server, error) {
 		incoming: make(chan IncomingRPC, IncomingBufferSize),
 		outgoing: make(chan OutgoingRPC, OutgoingBufferSize),
 	}
-	fmt.Println("Server listening on: ", network.GetConn())
+	log.Println("Server listening on: ", network.GetConn())
 	return s, nil
 }
 

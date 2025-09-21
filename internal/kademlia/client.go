@@ -4,6 +4,7 @@ import (
 	"crypto/sha1"
 	"encoding/json"
 	"fmt"
+	"log"
 	"sync"
 	"time"
 )
@@ -28,7 +29,7 @@ func InitClient(node NodeAPI, network Network) (*Client, error) {
 		network: network,
 	}
 
-	fmt.Println("Client listening on: ", network.GetConn())
+	log.Println("Client listening on: ", network.GetConn())
 
 	go c.listen()
 
@@ -91,7 +92,7 @@ func (client *Client) SendPingMessage(target Contact) (RPCMessage, error) {
 	case resp := <-respChan:
 		// Add contact
 		client.node.AddContact(resp.Payload.SourceContact)
-		fmt.Println("PING response received")
+		log.Println("PING response received")
 		return resp, nil
 	case <-time.After(5 * time.Second):
 		return RPCMessage{}, fmt.Errorf("PING Timeout")
@@ -118,7 +119,7 @@ func (client *Client) SendFindNodeMessage(target *KademliaID, contact Contact) (
 		if resp.Payload.SourceContact != (Contact{}) {
 			client.node.AddContact(resp.Payload.SourceContact)
 		}
-		fmt.Println("FIND_NODE response received")
+		log.Println("FIND_NODE response received")
 		for _, c := range resp.Payload.Contacts {
 			client.node.AddContact(c)
 		}
@@ -157,17 +158,17 @@ func (client *Client) SendStoreMessage(data []byte) (RPCMessage, error) {
 		select {
 		case resp := <-respChan:
 			client.node.AddContact(resp.Payload.SourceContact)
-			fmt.Println("STORE response received")
+			log.Println("STORE response received")
 			// Assume any response means successful store
 
 			storedCount++
-			fmt.Println("\nData stored on:", resp.Payload.SourceContact, '\n')
+			log.Println("\nData stored on:", resp.Payload.SourceContact, '\n')
 			lastResp = resp
 			if storedCount >= k {
 				return lastResp, nil
 			}
 		case <-time.After(2 * time.Second):
-			fmt.Println("STORE Timeout for contact", contact.String())
+			log.Println("STORE Timeout for contact", contact.String())
 			// try next contact
 		}
 	}
@@ -208,7 +209,7 @@ func (client *Client) SendFindValueMessage(hash string) (RPCMessage, error) {
 
 		select {
 		case resp := <-respChan:
-			fmt.Println("FIND_VALUE response received")
+			log.Println("FIND_VALUE response received")
 			client.node.AddContact(resp.Payload.SourceContact)
 			if resp.Payload.Data != nil {
 				// Found the data, return immediately
@@ -216,7 +217,7 @@ func (client *Client) SendFindValueMessage(hash string) (RPCMessage, error) {
 			}
 			// else, try next contact
 		case <-time.After(2 * time.Second):
-			fmt.Println("FIND_VALUE Timeout for contact", contact.String())
+			log.Println("FIND_VALUE Timeout for contact", contact.String())
 			// try next contact
 		}
 	}

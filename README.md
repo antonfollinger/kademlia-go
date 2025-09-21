@@ -25,3 +25,8 @@ chmod +x runTests.sh
    ```bash
 ./runTests.sh
    ```
+
+Run the 1000 node packet drop test using:
+   ```bash
+go test -v ./internal/kademlia/network_test.go
+   ```

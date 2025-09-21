@@ -1,10 +1,9 @@
 package kademlia
 
 import (
-	"fmt"
+	"log"
 	"math/rand"
 	"net"
-	"os"
 	"time"
 )
 
@@ -41,8 +40,8 @@ func InitKademlia(port string, bootstrap bool, bootstrapIP string, opts ...Kadem
 	k := &Kademlia{}
 	ip := GetLocalIP() + ":" + port
 
-	fmt.Println("Local_ip: ", ip)
-	fmt.Println("Bootstrap IP: ", bootstrapIP)
+	log.Println("Local_ip: ", ip)
+	log.Println("Bootstrap IP: ", bootstrapIP)
 
 	// Node
 	var nodeErr error
@@ -100,7 +99,7 @@ func InitKademlia(port string, bootstrap bool, bootstrapIP string, opts ...Kadem
 	// Integrate JoinNetwork for both bootstrap and peer nodes
 	err = k.Node.JoinNetwork()
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "failed to join network: %v\n", err)
+		log.Printf("failed to join network: %v\n", err)
 	}
 
 	return k, nil
