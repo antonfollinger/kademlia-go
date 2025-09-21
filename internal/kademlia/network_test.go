@@ -43,9 +43,6 @@ func Test_MockNetwork_PacketDrop_Emulation(t *testing.T) {
 	const dropRate = 0.1
 	const messagesPerNode = 10
 
-	// Seed random for reproducibility
-	rand.Seed(1)
-
 	// Create address map and nodes
 	addrMap := make(map[string]chan mockPacket, nodeCount)
 	nodes := make([]*MockNetwork, nodeCount)
@@ -76,7 +73,7 @@ func Test_MockNetwork_PacketDrop_Emulation(t *testing.T) {
 		}
 	}
 
-	t.Logf("Total sent: %d, Success: %d, Dropped: %d, DropRate: %.2f", nodeCount*messagesPerNode, success, dropped, float64(dropped)/float64(nodeCount*messagesPerNode))
+	t.Logf("\n\nTotal messages sent: %d \nSuccess: %d \nDropped: %d \nDropRate: %.2f\n\n", nodeCount*messagesPerNode, success, dropped, float64(dropped)/float64(nodeCount*messagesPerNode))
 	if float64(dropped)/float64(nodeCount*messagesPerNode) < dropRate*0.8 || float64(dropped)/float64(nodeCount*messagesPerNode) > dropRate*1.2 {
 		t.Errorf("Packet drop rate out of expected bounds")
 	}
