@@ -23,30 +23,19 @@ const (
 
 type Server struct {
 	node     NodeAPI
-	conn     *net.UDPConn
+	network  Network
 	incoming chan IncomingRPC
 	outgoing chan OutgoingRPC
 }
 
-func InitServer(node NodeAPI) (*Server, error) {
-	ip := node.GetSelfContact().Address
-	udpAddr, err := net.ResolveUDPAddr("udp", ip)
-	if err != nil {
-		return nil, err
-	}
-
-	conn, err := net.ListenUDP("udp", udpAddr)
-	if err != nil {
-		return nil, err
-	}
-
+func InitServer(node NodeAPI, network Network) (*Server, error) {
 	s := &Server{
 		node:     node,
-		conn:     conn,
+		network:  network,
 		incoming: make(chan IncomingRPC, IncomingBufferSize),
 		outgoing: make(chan OutgoingRPC, OutgoingBufferSize),
 	}
-	fmt.Println("Server listening on: ", ip)
+	fmt.Println("Server listening on: ", network.GetConn())
 	return s, nil
 }
 
@@ -57,19 +46,24 @@ func (s *Server) RunServer() {
 }
 
 func (s *Server) listen() {
-	buf := make([]byte, IncomingBufferSize)
 	for {
-		n, addr, err := s.conn.ReadFromUDP(buf)
+		addrStr, data, err := s.network.ReceiveMessage()
 		if err != nil {
 			fmt.Println("listen error:", err)
 			continue
 		}
-		var rpc RPCMessage
 
-		if err := json.Unmarshal(buf[:n], &rpc); err != nil {
+		var rpc RPCMessage
+		if err := json.Unmarshal(data, &rpc); err != nil {
 			fmt.Println("Unmarshal error:", err)
 			continue
 		}
+
+		var addr *net.UDPAddr
+		if addrStr != "" {
+			addr, _ = net.ResolveUDPAddr("udp", addrStr)
+		}
+
 		if rpc.Query {
 			select {
 			case s.incoming <- IncomingRPC{RPC: rpc, Addr: addr}:
@@ -135,6 +129,8 @@ func (s *Server) respond() {
 	for {
 		out := <-s.outgoing
 		data, _ := json.Marshal(out.RPC)
-		_, _ = s.conn.WriteToUDP(data, out.Addr)
+		if out.Addr != nil {
+			_ = s.network.SendMessage(out.Addr.String(), data)
+		}
 	}
 }

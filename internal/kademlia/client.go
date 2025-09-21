@@ -4,14 +4,13 @@ import (
 	"crypto/sha1"
 	"encoding/json"
 	"fmt"
-	"net"
 	"sync"
 	"time"
 )
 
 type Client struct {
 	node    NodeAPI
-	conn    *net.UDPConn
+	network Network
 	pending sync.Map
 }
 
@@ -22,20 +21,14 @@ type ClientAPI interface {
 	SendFindValueMessage(hash string) (RPCMessage, error)
 }
 
-func InitClient(node NodeAPI) (*Client, error) {
-
-	// Create connection with ephemeral port
-	conn, err := net.ListenUDP("udp", nil)
-	if err != nil {
-		return nil, err
-	}
+func InitClient(node NodeAPI, network Network) (*Client, error) {
 
 	c := &Client{
-		node: node,
-		conn: conn,
+		node:    node,
+		network: network,
 	}
 
-	fmt.Println("Client listening on: ", conn.LocalAddr())
+	fmt.Println("Client listening on: ", network.GetConn())
 
 	go c.listen()
 
@@ -43,14 +36,13 @@ func InitClient(node NodeAPI) (*Client, error) {
 }
 
 func (client *Client) listen() {
-	buf := make([]byte, 4096)
 	for {
-		n, _, err := client.conn.ReadFromUDP(buf)
+		_, data, err := client.network.ReceiveMessage()
 		if err != nil {
 			continue
 		}
 		var resp RPCMessage
-		if err := json.Unmarshal(buf[:n], &resp); err != nil {
+		if err := json.Unmarshal(data, &resp); err != nil {
 			continue
 		}
 
@@ -67,12 +59,6 @@ func (client *Client) SendMessage(target Contact, msg *RPCMessage) (chan RPCMess
 	msg.Payload.SourceContact = client.node.GetSelfContact()
 	msg.Payload.TargetContact = target
 
-	// Build UDP address from Contact
-	addr, err := net.ResolveUDPAddr("udp", target.Address)
-	if err != nil {
-		return nil, fmt.Errorf("failed to resolve UDP addr: %w", err)
-	}
-
 	// Create response channel for this request
 	respChan := make(chan RPCMessage, 1)
 	client.pending.Store(msg.PacketID, respChan)
@@ -84,7 +70,7 @@ func (client *Client) SendMessage(target Contact, msg *RPCMessage) (chan RPCMess
 	}
 
 	// Send JSON bytes
-	_, err = client.conn.WriteToUDP(data, addr)
+	err = client.network.SendMessage(target.Address, data)
 	if err != nil {
 		return nil, fmt.Errorf("failed to send UDP message: %w", err)
 	}

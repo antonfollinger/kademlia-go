@@ -53,14 +53,22 @@ func InitKademlia(port string, bootstrap bool, bootstrapIP string, opts ...Kadem
 
 	// Client
 	var clientErr error
-	k.Client, clientErr = InitClient(k.Node)
+	clientNet, err := NewUDPNetwork("") // ephemeral port
+	if err != nil {
+		return nil, err
+	}
+	k.Client, clientErr = InitClient(k.Node, clientNet)
 	if clientErr != nil {
 		return nil, clientErr
 	}
 
 	// Server
 	var serverErr error
-	k.Server, serverErr = InitServer(k.Node)
+	serverNet, err := NewUDPNetwork(ip)
+	if err != nil {
+		return nil, err
+	}
+	k.Server, serverErr = InitServer(k.Node, serverNet)
 	if serverErr != nil {
 		return nil, serverErr
 	}
@@ -90,7 +98,7 @@ func InitKademlia(port string, bootstrap bool, bootstrapIP string, opts ...Kadem
 	}
 
 	// Integrate JoinNetwork for both bootstrap and peer nodes
-	err := k.Node.JoinNetwork()
+	err = k.Node.JoinNetwork()
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "failed to join network: %v\n", err)
 	}
