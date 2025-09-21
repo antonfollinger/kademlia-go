@@ -12,6 +12,10 @@ type MockNetwork struct {
 	nodeAddrs map[string]chan mockPacket
 }
 
+func (m *MockNetwork) GetConn() string {
+	return ""
+}
+
 type mockPacket struct {
 	src  string
 	data []byte
@@ -38,42 +42,70 @@ func (m *MockNetwork) Close() error {
 	return nil
 }
 
-func Test_MockNetwork_PacketDrop_Emulation(t *testing.T) {
-	const nodeCount = 1000
-	const dropRate = 0.1
-	const messagesPerNode = 10
+func Test_Kademlia_NetworkEmulation_WithPacketDrop(t *testing.T) {
+	const nodeCount = 1000 // Change for testing
+	const dropRate = 0.1   // Change for testing
+	const messagesPerNode = 5
 
-	// Create address map and nodes
 	addrMap := make(map[string]chan mockPacket, nodeCount)
-	nodes := make([]*MockNetwork, nodeCount)
+	networks := make([]*MockNetwork, nodeCount)
+	nodes := make([]*Node, nodeCount)
+	clients := make([]*Client, nodeCount)
+	servers := make([]*Server, nodeCount)
+
+	// Setup address map and networks
 	for i := 0; i < nodeCount; i++ {
 		addr := fmt.Sprintf("node%d", i)
 		inbox := make(chan mockPacket, 100)
 		addrMap[addr] = inbox
-		nodes[i] = &MockNetwork{
-			inbox:     inbox,
+	}
+
+	// Create nodes, clients, and servers
+	for i := 0; i < nodeCount; i++ {
+		addr := fmt.Sprintf("node%d", i)
+		networks[i] = &MockNetwork{
+			inbox:     addrMap[addr],
 			dropRate:  dropRate,
 			nodeAddrs: addrMap,
 		}
+		node, err := InitNode(false, addr, "node0")
+		if err != nil {
+			t.Fatalf("Failed to init node %d: %v", i, err)
+		}
+		client, err := InitClient(node, networks[i])
+		if err != nil {
+			t.Fatalf("Failed to init client %d: %v", i, err)
+		}
+		server, err := InitServer(node, networks[i])
+		if err != nil {
+			t.Fatalf("Failed to init server %d: %v", i, err)
+		}
+		node.SetClient(client)
+		nodes[i] = node
+		clients[i] = client
+		servers[i] = server
 	}
 
-	// Send messages between random nodes
+	// Emulate sending PING messages between random nodes
 	success := 0
 	dropped := 0
 	for i := 0; i < nodeCount; i++ {
 		for j := 0; j < messagesPerNode; j++ {
-			target := fmt.Sprintf("node%d", rand.Intn(nodeCount))
-			data := []byte(fmt.Sprintf("msg from node%d", i))
-			err := nodes[i].SendMessage(target, data)
+			targetIdx := rand.Intn(nodeCount)
+			if targetIdx == i {
+				targetIdx = (targetIdx + 1) % nodeCount
+			}
+			targetContact := nodes[targetIdx].GetSelfContact()
+			resp, err := clients[i].SendPingMessage(targetContact)
 			if err != nil {
 				dropped++
-			} else {
+			} else if resp.Type == "PONG" {
 				success++
 			}
 		}
 	}
 
-	t.Logf("\n\nTotal messages sent: %d \nSuccess: %d \nDropped: %d \nDropRate: %.2f\n\n", nodeCount*messagesPerNode, success, dropped, float64(dropped)/float64(nodeCount*messagesPerNode))
+	t.Logf("\n\nTotal PINGs sent: %d \nSuccess: %d \nDropped: %d \nDropRate: %.2f\n\n", nodeCount*messagesPerNode, success, dropped, float64(dropped)/float64(nodeCount*messagesPerNode))
 	if float64(dropped)/float64(nodeCount*messagesPerNode) < dropRate*0.8 || float64(dropped)/float64(nodeCount*messagesPerNode) > dropRate*1.2 {
 		t.Errorf("Packet drop rate out of expected bounds")
 	}
