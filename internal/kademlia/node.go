@@ -1,7 +1,6 @@
 package kademlia
 
 import (
-	"fmt"
 	"log"
 	"sort"
 	"sync"
@@ -75,7 +74,6 @@ func (node *Node) JoinNetwork() error {
 				rpc, err := node.Client.SendPingMessage(bootstrapContact)
 				if err == nil {
 					node.AddContact(rpc.Payload.SourceContact)
-					fmt.Println(rpc.Payload.SourceContact)
 					break
 				}
 				time.Sleep(300 * time.Millisecond)
