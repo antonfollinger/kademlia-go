@@ -101,9 +101,6 @@ func (client *Client) SendPingMessage(target Contact) (RPCMessage, error) {
 	// Wait for response
 	select {
 	case resp := <-respChan:
-		// Add contact
-		client.node.AddContact(resp.Payload.SourceContact)
-		//log.Println("PING response received")
 		return resp, nil
 	case <-time.After(500 * time.Millisecond):
 		return RPCMessage{}, fmt.Errorf("PING Timeout")
@@ -130,7 +127,6 @@ func (client *Client) SendFindNodeMessage(target *KademliaID, contact Contact) (
 		if resp.Payload.SourceContact != (Contact{}) {
 			client.node.AddContact(resp.Payload.SourceContact)
 		}
-		//log.Println("FIND_NODE response received")
 		for _, c := range resp.Payload.Contacts {
 			client.node.AddContact(c)
 		}

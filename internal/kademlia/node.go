@@ -75,7 +75,7 @@ func (node *Node) JoinNetwork() error {
 				if err == nil {
 					break
 				}
-				time.Sleep(500 * time.Millisecond)
+				time.Sleep(300 * time.Millisecond)
 			}
 			if err != nil {
 				log.Printf("%s failed to ping bootstrap node on %s: %v\n", node.GetSelfContact().Address, bootstrapContact.Address, err)
@@ -101,34 +101,38 @@ func (node *Node) GetSelfContact() (self Contact) {
 	return node.RoutingTable.me
 }
 
-func (node *Node) AddContact(contact Contact) {
-	node.mu.Lock()
-	defer node.mu.Unlock()
-
-	if contact.ID.Equals(node.GetSelfContact().ID) {
+func (n *Node) AddContact(c Contact) {
+	n.mu.Lock()
+	bucketIndex := n.RoutingTable.getBucketIndex(c.ID)
+	bucket := n.RoutingTable.buckets[bucketIndex]
+	if bucket.Len() < bucketSize {
+		bucket.AddContact(c)
+		n.mu.Unlock()
 		return
 	}
+	// If full, copy LRU contact to ping after releasing lock
+	lru := bucket.list.Back().Value.(Contact)
+	n.mu.Unlock()
 
-	bucket := node.RoutingTable.buckets[node.RoutingTable.getBucketIndex(contact.ID)]
-
-	if bucket.Len() < bucketSize {
-		node.RoutingTable.AddContact(contact)
-	} else {
-		// Ping last indexed contact
-		lastContactElem := bucket.list.Back()
-		lastContact := lastContactElem.Value.(Contact)
-		resp, err := node.Client.SendPingMessage(lastContact)
-
-		if err == nil && resp.Type == "PONG" {
-			// Last contact responded, do not add new contact
-			//log.Printf("Contact %s responded to ping, not adding new contact %s\n", lastContact.String(), contact.String())
-		} else {
-			// Last contact did not respond, remove and add new contact
-			bucket.list.Remove(lastContactElem)
-			node.RoutingTable.AddContact(contact)
-			//log.Printf("Contact %s did not respond, replaced with new contact %s\n", lastContact.String(), contact.String())
-		}
+	// Ping LRU outside lock
+	alive := false
+	if resp, err := n.Client.SendPingMessage(lru); err == nil && resp.Type == "PONG" {
+		alive = true
 	}
+
+	n.mu.Lock()
+	defer n.mu.Unlock()
+
+	bucketIndex = n.RoutingTable.getBucketIndex(c.ID)
+	bucket = n.RoutingTable.buckets[bucketIndex] // re-fetch in case table changed
+	if bucket.Len() < bucketSize {
+		bucket.AddContact(c)
+	} else if !alive {
+		// evict old LRU and add new contact
+		bucket.list.Remove(bucket.list.Back())
+		bucket.AddContact(c)
+	}
+	// else: keep existing LRU, drop new
 }
 
 func (node *Node) LookupClosestContacts(target Contact) []Contact {
