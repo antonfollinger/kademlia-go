@@ -31,8 +31,8 @@ type Kademlia struct {
 func InitKademlia(port string, bootstrap bool, bootstrapIP string, opts ...KademliaOption) (*Kademlia, error) {
 	cfg := &KademliaConfig{
 		SkipBootstrapPing:    false,
-		BootstrapPingRetries: 5,
-		BootstrapPingDelayMs: 2000,
+		BootstrapPingRetries: 10,
+		BootstrapPingDelayMs: 3000,
 	}
 	for _, opt := range opts {
 		opt(cfg)

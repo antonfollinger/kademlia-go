@@ -49,7 +49,7 @@ func (node *Node) Cli(in io.Reader, out io.Writer) {
 			fmt.Fprintln(out, "Shutting down node.")
 			return
 		case "print":
-			fmt.Fprintln(out, "Print not implemented for testable CLI.")
+			node.PrintRoutingTable()
 		default:
 			fmt.Fprintln(out, "Unknown command. Use put <content>, get <hash>, or exit.")
 		}
@@ -61,7 +61,7 @@ func (node *Node) Put(content string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	result := fmt.Sprintf("✅ Content stored!\nHash: %s\nPacket ID: %s\n", ans.Payload.Key, ans.PacketID)
+	result := fmt.Sprintf("Content stored!\nHash: %s\nPacket ID: %s\n", ans.Payload.Key, ans.PacketID)
 	return result, nil
 }
 
@@ -73,6 +73,6 @@ func (node *Node) Get(hash string) (string, error) {
 	if ans.Payload.SourceContact.ID == nil {
 		return "", fmt.Errorf("no source contact found")
 	}
-	result := fmt.Sprintf("✅ Content retrieved!\nHash: %s\nContent: %s\nSource: %s\n", ans.Payload.Key, ans.Payload.Data, ans.Payload.SourceContact.ID.String())
+	result := fmt.Sprintf("Content retrieved!\nHash: %s\nContent: %s\nSource: %s\n", ans.Payload.Key, ans.Payload.Data, ans.Payload.SourceContact.ID.String())
 	return result, nil
 }

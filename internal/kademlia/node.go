@@ -116,6 +116,12 @@ func (node *Node) LookupClosestContacts(target Contact) []Contact {
 func (node *Node) IterativeFindNode(target *KademliaID) ([]Contact, error) {
 	shortlist := node.LookupClosestContacts(NewContact(target, ""))
 	queried := make(map[string]bool)
+	inShortlist := make(map[string]bool) // Track contacts in shortlist
+
+	// Initialize inShortlist with initial shortlist
+	for _, c := range shortlist {
+		inShortlist[c.ID.String()] = true
+	}
 
 	for {
 		batch := []Contact{}
@@ -149,8 +155,9 @@ func (node *Node) IterativeFindNode(target *KademliaID) ([]Contact, error) {
 		for i := 0; i < len(batch); i++ {
 			contacts := <-results
 			for _, c := range contacts {
-				if !queried[c.ID.String()] {
+				if !queried[c.ID.String()] && !inShortlist[c.ID.String()] {
 					shortlist = append(shortlist, c)
+					inShortlist[c.ID.String()] = true // Mark as in shortlist
 					updated = true
 				}
 			}
