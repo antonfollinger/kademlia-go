@@ -12,6 +12,7 @@ type mockPacket struct {
 
 type MockRegistry struct {
 	channels map[string]chan mockPacket
+	closed   map[string]bool
 	mu       sync.RWMutex
 }
 
@@ -29,7 +30,7 @@ func NewMockNetwork(addr string, registry *MockRegistry) *MockNetwork {
 }
 
 func NewMockRegistry() *MockRegistry {
-	return &MockRegistry{channels: make(map[string]chan mockPacket)}
+	return &MockRegistry{channels: make(map[string]chan mockPacket), closed: make(map[string]bool)}
 }
 
 func (r *MockRegistry) Register(addr string) chan mockPacket {
@@ -37,6 +38,7 @@ func (r *MockRegistry) Register(addr string) chan mockPacket {
 	defer r.mu.Unlock()
 	ch := make(chan mockPacket, 50)
 	r.channels[addr] = ch
+	r.closed[addr] = false
 	return ch
 }
 
@@ -44,6 +46,9 @@ func (r *MockRegistry) Get(addr string) (chan mockPacket, bool) {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 	ch, ok := r.channels[addr]
+	if !ok || r.closed[addr] {
+		return nil, false
+	}
 	return ch, ok
 }
 
@@ -52,11 +57,16 @@ func (m *MockNetwork) GetConn() string {
 }
 
 func (m *MockNetwork) SendMessage(addr string, data []byte) error {
-	if ch, ok := m.registry.Get(addr); ok {
-		ch <- mockPacket{src: m.addr, data: data}
-		return nil
+	ch, ok := m.registry.Get(addr)
+	if !ok {
+		return fmt.Errorf("address not found or channel closed: %s", addr)
 	}
-	return fmt.Errorf("address not found: %s", addr)
+	select {
+	case ch <- mockPacket{src: m.addr, data: data}:
+		return nil
+	default:
+		return fmt.Errorf("channel full or closed for address: %s", addr)
+	}
 }
 
 func (m *MockNetwork) ReceiveMessage() (string, []byte, error) {
@@ -64,14 +74,20 @@ func (m *MockNetwork) ReceiveMessage() (string, []byte, error) {
 	if !ok {
 		return "", nil, fmt.Errorf("no channel for address: %s", m.addr)
 	}
-	pkt := <-ch
+	pkt, ok := <-ch
+	if !ok {
+		return "", nil, fmt.Errorf("channel closed for address: %s", m.addr)
+	}
 	return pkt.src, pkt.data, nil
 }
 
 func (m *MockNetwork) Close() error {
-	ch, ok := m.registry.Get(m.addr)
-	if ok {
+	m.registry.mu.Lock()
+	ch, ok := m.registry.channels[m.addr]
+	if ok && !m.registry.closed[m.addr] {
 		close(ch)
+		m.registry.closed[m.addr] = true
 	}
+	m.registry.mu.Unlock()
 	return nil
 }
