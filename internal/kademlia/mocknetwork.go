@@ -35,7 +35,7 @@ func NewMockRegistry() *MockRegistry {
 func (r *MockRegistry) Register(addr string) chan mockPacket {
 	r.mu.Lock()
 	defer r.mu.Unlock()
-	ch := make(chan mockPacket, 1000)
+	ch := make(chan mockPacket, 50)
 	r.channels[addr] = ch
 	return ch
 }

@@ -2,9 +2,7 @@ package kademlia
 
 import (
 	"log"
-	"math/rand"
 	"net"
-	"time"
 )
 
 type KademliaConfig struct {
@@ -49,9 +47,6 @@ func InitKademlia(port string, bootstrap bool, bootstrapIP string, opts ...Kadem
 		ip = GetLocalIP() + ":" + port
 	}
 
-	log.Println("Local_ip: ", ip)
-	log.Println("Bootstrap IP: ", bootstrapIP)
-
 	// Node
 	var nodeErr error
 	k.Node, nodeErr = InitNode(bootstrap, ip, bootstrapIP)
@@ -94,27 +89,6 @@ func InitKademlia(port string, bootstrap bool, bootstrapIP string, opts ...Kadem
 	}
 
 	k.Node.SetClient(k.Client)
-
-	bootstrapID := NewKademliaID("0000000000000000000000000000000000000000")
-
-	if !k.Node.RoutingTable.me.ID.Equals(bootstrapID) && !cfg.SkipBootstrapPing {
-		// Random delay to reduce package drops
-		time.Sleep(time.Duration(rand.Intn(cfg.BootstrapPingDelayMs)) * time.Millisecond)
-
-		// Retry pinging bootstrap a few times
-		var err1 error
-		for i := 0; i < cfg.BootstrapPingRetries; i++ {
-			c := k.Node.RoutingTable.FindClosestContacts(bootstrapID, 1)[0]
-			_, err1 = k.Client.SendPingMessage(c)
-			if err1 == nil {
-				break
-			}
-			time.Sleep(time.Duration(rand.Intn(cfg.BootstrapPingDelayMs)) * time.Millisecond)
-		}
-		if err1 != nil {
-			println(ip, " failed to ping bootstrap node on", bootstrapIP)
-		}
-	}
 
 	if !cfg.SkipBootstrapPing {
 		// Integrate JoinNetwork for both bootstrap and peer nodes

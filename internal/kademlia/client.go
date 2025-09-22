@@ -13,6 +13,7 @@ type Client struct {
 	node    NodeAPI
 	network Network
 	pending sync.Map
+	done    chan struct{}
 }
 
 type ClientAPI interface {
@@ -27,9 +28,8 @@ func InitClient(node NodeAPI, network Network) (*Client, error) {
 	c := &Client{
 		node:    node,
 		network: network,
+		done:    make(chan struct{}),
 	}
-
-	//log.Println("Client listening on: ", network.GetConn())
 
 	go c.listen()
 
@@ -38,20 +38,31 @@ func InitClient(node NodeAPI, network Network) (*Client, error) {
 
 func (client *Client) listen() {
 	for {
-		_, data, err := client.network.ReceiveMessage()
-		if err != nil {
-			continue
-		}
-		var resp RPCMessage
-		if err := json.Unmarshal(data, &resp); err != nil {
-			continue
-		}
+		select {
+		case <-client.done:
+			return
+		default:
+			_, data, err := client.network.ReceiveMessage()
+			if err != nil {
+				continue
+			}
+			var resp RPCMessage
+			if err := json.Unmarshal(data, &resp); err != nil {
+				continue
+			}
 
-		if ch, ok := client.pending.Load(resp.PacketID); ok {
-			ch.(chan RPCMessage) <- resp
-			client.pending.Delete(resp.PacketID)
+			if ch, ok := client.pending.Load(resp.PacketID); ok {
+				ch.(chan RPCMessage) <- resp
+				client.pending.Delete(resp.PacketID)
+			}
 		}
 	}
+}
+
+// Close gracefully shuts down the client and its network connection
+func (client *Client) Close() error {
+	close(client.done)
+	return client.network.Close()
 }
 
 func (client *Client) SendMessage(target Contact, msg *RPCMessage) (chan RPCMessage, error) {
@@ -92,9 +103,9 @@ func (client *Client) SendPingMessage(target Contact) (RPCMessage, error) {
 	case resp := <-respChan:
 		// Add contact
 		client.node.AddContact(resp.Payload.SourceContact)
-		log.Println("PING response received")
+		//log.Println("PING response received")
 		return resp, nil
-	case <-time.After(100 * time.Millisecond):
+	case <-time.After(500 * time.Millisecond):
 		return RPCMessage{}, fmt.Errorf("PING Timeout")
 	}
 }
@@ -119,7 +130,7 @@ func (client *Client) SendFindNodeMessage(target *KademliaID, contact Contact) (
 		if resp.Payload.SourceContact != (Contact{}) {
 			client.node.AddContact(resp.Payload.SourceContact)
 		}
-		log.Println("FIND_NODE response received")
+		//log.Println("FIND_NODE response received")
 		for _, c := range resp.Payload.Contacts {
 			client.node.AddContact(c)
 		}
@@ -144,8 +155,6 @@ func (client *Client) SendStoreMessage(data []byte) (RPCMessage, error) {
 		return RPCMessage{}, fmt.Errorf("no nodes found to store data")
 	}
 
-	fmt.Println("closest:", closest)
-
 	k := alpha // minimum number of nodes to store
 	storedCount := 0
 	var lastResp RPCMessage
@@ -160,11 +169,10 @@ func (client *Client) SendStoreMessage(data []byte) (RPCMessage, error) {
 		select {
 		case resp := <-respChan:
 			client.node.AddContact(resp.Payload.SourceContact)
-			log.Println("STORE response received")
+			////log.Println("STORE response received")
 			// Assume any response means successful store
 
 			storedCount++
-			log.Println("\nData stored on:", resp.Payload.SourceContact, '\n')
 			lastResp = resp
 			if storedCount >= k {
 				return lastResp, nil
@@ -211,7 +219,7 @@ func (client *Client) SendFindValueMessage(hash string) (RPCMessage, error) {
 
 		select {
 		case resp := <-respChan:
-			log.Println("FIND_VALUE response received")
+			//log.Println("FIND_VALUE response received")
 			client.node.AddContact(resp.Payload.SourceContact)
 			if resp.Payload.Data != nil {
 				// Found the data, return immediately

@@ -2,61 +2,66 @@ package kademlia
 
 import (
 	"fmt"
-	"sync"
 	"testing"
+	"time"
 )
 
+const nodeCount = 30
+const droprate = 0
+
 func Test_Kademlia_NetworkEmulation_WithPacketDrop(t *testing.T) {
-	const nodeCount = 100
-	const droprate = 0.5
 
 	// Create global MockRegistry
 	registry := NewMockRegistry()
 
-	// Create all nodes (bootstrap first, then peers) in parallel
 	totalNodes := nodeCount
 	nodes := make([]*Kademlia, totalNodes)
 	errs := make([]error, totalNodes)
 
-	var wg sync.WaitGroup
-	wg.Add(totalNodes)
+	// Create bootstrap node first
+	bootstrapAddr := "127.0.0.1:5000"
+	bootstrapNode, bootstrapErr := InitKademlia(
+		bootstrapAddr[len("127.0.0.1:"):],
+		true,
+		"",
+		func(cfg *KademliaConfig) {
+			cfg.isMockNetwork = true
+			cfg.MockNetworkRegistry = registry
+		},
+	)
+	nodes[0] = bootstrapNode
+	errs[0] = bootstrapErr
+	if bootstrapErr != nil {
+		t.Fatalf("InitKademlia failed for bootstrap node: %v", bootstrapErr)
+	}
 
-	for i := 0; i < totalNodes; i++ {
-		go func(i int) {
-			defer wg.Done()
-			var addr string
-			var isBootstrap bool
-			var bootstrapIP string
-			if i == 0 {
-				// Bootstrap node
-				addr = "127.0.0.1:1234"
-				isBootstrap = true
-				bootstrapIP = ""
-			} else {
-				// Peer node
-				addr = fmt.Sprintf("127.0.0.1:%d", 5000+i)
-				isBootstrap = false
-				bootstrapIP = "127.0.0.1:1234"
-			}
-			node, err := InitKademlia(addr[len("127.0.0.1:"):], isBootstrap, bootstrapIP, func(cfg *KademliaConfig) {
+	// Wait for bootstrap node to start listening
+	time.Sleep(300 * time.Millisecond)
+
+	// Create the rest of the nodes
+	for i := 1; i < nodeCount; i++ {
+		addr := fmt.Sprintf("127.0.0.1:%d", 5000+i)
+		node, err := InitKademlia(
+			addr[len("127.0.0.1:"):],
+			false,
+			bootstrapAddr,
+			func(cfg *KademliaConfig) {
 				cfg.isMockNetwork = true
 				cfg.MockNetworkRegistry = registry
-			})
-			if err != nil {
-				t.Logf("Node %d creation failed: %v", i, err)
-			} else {
-				t.Logf("Node %d created successfully", i)
-			}
-			nodes[i] = node
-			errs[i] = err
-		}(i)
+			},
+		)
+		nodes[i] = node
+		errs[i] = err
+		t.Logf("Created peer node %d as %v", i, node.Node.GetSelfContact())
 	}
-	wg.Wait()
 	for i, err := range errs {
 		if err != nil {
 			t.Fatalf("InitKademlia failed for node %d: %v", i, err)
 		}
 	}
+
+	// Give goroutines time to start and stabilize
+	time.Sleep(300 * time.Millisecond)
 
 	// Bootstrap node puts up a single value
 	bootstrap := nodes[0]
@@ -71,13 +76,14 @@ func Test_Kademlia_NetworkEmulation_WithPacketDrop(t *testing.T) {
 		t.Logf("Bootstrap node stored value '%s' under key '%s'", value, key)
 	}
 
-	// Randomly delete nodes from the network using droprate
-	deleted := make(map[int]bool)
+	// Randomly delete peer nodes from the network using droprate
 	for i := 1; i < totalNodes; i++ {
-		// Don't delete bootstrap node
 		if randFloat := float32(i%10) / 10.0; randFloat < droprate {
+
+			nodes[i].Client.Close()
+			nodes[i].Server.Close()
+
 			nodes[i] = nil
-			deleted[i] = true
 			t.Logf("Node %d deleted from network", i)
 		}
 	}

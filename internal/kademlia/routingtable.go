@@ -11,7 +11,7 @@ const bucketSize = 20
 type RoutingTable struct {
 	me      Contact
 	buckets [IDLength * 8]*bucket
-	mu      sync.Mutex
+	mu      sync.RWMutex
 }
 
 func GetMe(routingTable *RoutingTable) Contact {
@@ -41,12 +41,11 @@ func (routingTable *RoutingTable) AddContact(contact Contact) {
 
 // FindClosestContacts finds the count closest Contacts to the target in the RoutingTable
 func (routingTable *RoutingTable) FindClosestContacts(target *KademliaID, count int) []Contact {
-	routingTable.mu.Lock()
-	defer routingTable.mu.Unlock()
 	var candidates ContactCandidates
 	bucketIndex := routingTable.getBucketIndex(target)
 	bucket := routingTable.buckets[bucketIndex]
 
+	routingTable.mu.RLock()
 	candidates.Append(bucket.GetContactAndCalcDistance(target))
 
 	for i := 1; (bucketIndex-i >= 0 || bucketIndex+i < IDLength*8) && candidates.Len() < count; i++ {
@@ -59,7 +58,7 @@ func (routingTable *RoutingTable) FindClosestContacts(target *KademliaID, count 
 			candidates.Append(bucket.GetContactAndCalcDistance(target))
 		}
 	}
-
+	routingTable.mu.RUnlock()
 	candidates.Sort()
 
 	if count > candidates.Len() {

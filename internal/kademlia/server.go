@@ -3,7 +3,6 @@ package kademlia
 import (
 	"encoding/json"
 	"fmt"
-	"log"
 )
 
 type IncomingRPC struct {
@@ -17,8 +16,9 @@ type OutgoingRPC struct {
 }
 
 const (
-	IncomingBufferSize int = 8192
-	OutgoingBufferSize int = 8192
+	IncomingBufferSize int = 256
+	OutgoingBufferSize int = 256
+	workerCount        int = 5
 )
 
 type Server struct {
@@ -26,6 +26,7 @@ type Server struct {
 	network  Network
 	incoming chan IncomingRPC
 	outgoing chan OutgoingRPC
+	done     chan struct{}
 }
 
 func InitServer(node NodeAPI, network Network) (*Server, error) {
@@ -34,8 +35,8 @@ func InitServer(node NodeAPI, network Network) (*Server, error) {
 		network:  network,
 		incoming: make(chan IncomingRPC, IncomingBufferSize),
 		outgoing: make(chan OutgoingRPC, OutgoingBufferSize),
+		done:     make(chan struct{}),
 	}
-	log.Println("Server listening on: ", network.GetConn())
 
 	s.RunServer()
 
@@ -44,38 +45,48 @@ func InitServer(node NodeAPI, network Network) (*Server, error) {
 
 func (s *Server) RunServer() {
 	go s.listen()
-	go s.handleIncoming()
 	go s.respond()
+	for range workerCount {
+		go func() {
+			for {
+				select {
+				case <-s.done:
+					return
+				case in := <-s.incoming:
+					s.processRequest(in)
+				}
+			}
+		}()
+	}
 }
 
 func (s *Server) listen() {
 	for {
-		addrStr, data, err := s.network.ReceiveMessage()
-		if err != nil {
-			fmt.Println("listen error:", err)
-			continue
-		}
+		select {
+		case <-s.done:
+			return
+		default:
+			addrStr, data, err := s.network.ReceiveMessage()
+			if err != nil {
+				fmt.Println("listen error:", err)
+				continue
+			}
 
-		var rpc RPCMessage
-		if err := json.Unmarshal(data, &rpc); err != nil {
-			fmt.Println("Unmarshal error:", err)
-			continue
-		}
+			var rpc RPCMessage
+			if err := json.Unmarshal(data, &rpc); err != nil {
+				fmt.Println("Unmarshal error:", err)
+				continue
+			}
 
-		if rpc.Query {
-			select {
-			case s.incoming <- IncomingRPC{RPC: rpc, Addr: addrStr}:
-				// Packet accepted
-			default:
-				fmt.Printf("DROPPED PACKET from %v: incoming channel overflow\n", addrStr)
+			if rpc.Query {
+				select {
+				case s.incoming <- IncomingRPC{RPC: rpc, Addr: addrStr}:
+					// Packet accepted
+				default:
+					fmt.Printf("DROPPED PACKET from %v: incoming channel overflow\n", addrStr)
+				}
 			}
 		}
-	}
-}
-
-func (s *Server) handleIncoming() {
-	for in := range s.incoming {
-		go s.processRequest(in)
 	}
 }
 
@@ -125,10 +136,22 @@ func (s *Server) processRequest(in IncomingRPC) {
 
 func (s *Server) respond() {
 	for {
-		out := <-s.outgoing
-		data, _ := json.Marshal(out.RPC)
-		if out.Addr != "" {
-			_ = s.network.SendMessage(out.Addr, data)
+		select {
+		case <-s.done:
+			return
+		case out := <-s.outgoing:
+			data, _ := json.Marshal(out.RPC)
+			if out.Addr != "" {
+				_ = s.network.SendMessage(out.Addr, data)
+			}
 		}
 	}
+}
+
+// Close gracefully shuts down the server and its network connection
+func (s *Server) Close() error {
+	close(s.done)
+	close(s.incoming)
+	close(s.outgoing)
+	return s.network.Close()
 }
