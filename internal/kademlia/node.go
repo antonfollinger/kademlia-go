@@ -1,6 +1,7 @@
 package kademlia
 
 import (
+	"fmt"
 	"log"
 	"sort"
 	"sync"
@@ -74,6 +75,7 @@ func (node *Node) JoinNetwork() error {
 				rpc, err := node.Client.SendPingMessage(bootstrapContact)
 				if err == nil {
 					node.AddContact(rpc.Payload.SourceContact)
+					fmt.Println(rpc.Payload.SourceContact)
 					break
 				}
 				time.Sleep(300 * time.Millisecond)
@@ -106,6 +108,8 @@ func (n *Node) AddContact(c Contact) {
 	n.mu.Lock()
 	bucketIndex := n.RoutingTable.getBucketIndex(c.ID)
 	bucket := n.RoutingTable.buckets[bucketIndex]
+	// Calculate and set the contact's distance field before adding
+	c.distance = n.Id.CalcDistance(c.ID)
 	if bucket.Len() < bucketSize {
 		bucket.AddContact(c)
 		n.mu.Unlock()

@@ -7,7 +7,7 @@ import (
 )
 
 const nodeCount = 1000
-const droprate = 0
+const droprate = 0.5
 
 func Test_Kademlia_NetworkEmulation_WithPacketDrop(t *testing.T) {
 
