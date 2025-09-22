@@ -144,6 +144,8 @@ func (client *Client) SendStoreMessage(data []byte) (RPCMessage, error) {
 		return RPCMessage{}, fmt.Errorf("no nodes found to store data")
 	}
 
+	fmt.Println("closest:", closest)
+
 	k := alpha // minimum number of nodes to store
 	storedCount := 0
 	var lastResp RPCMessage

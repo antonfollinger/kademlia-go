@@ -13,7 +13,6 @@ type KademliaConfig struct {
 	BootstrapPingDelayMs int
 	isMockNetwork        bool
 	MockNetworkRegistry  *MockRegistry
-	DropRate             float64
 }
 
 type KademliaOption func(*KademliaConfig)
@@ -34,10 +33,9 @@ func InitKademlia(port string, bootstrap bool, bootstrapIP string, opts ...Kadem
 	cfg := &KademliaConfig{
 		SkipBootstrapPing:    false,
 		BootstrapPingRetries: 5,
-		BootstrapPingDelayMs: 2000,
+		BootstrapPingDelayMs: 500,
 		isMockNetwork:        false,
 		MockNetworkRegistry:  nil,
-		DropRate:             0,
 	}
 	for _, opt := range opts {
 		opt(cfg)
@@ -67,8 +65,8 @@ func InitKademlia(port string, bootstrap bool, bootstrapIP string, opts ...Kadem
 	if cfg.isMockNetwork {
 		// Use unique addresses for client and server to avoid channel sharing
 		clientAddr := "127.0.0.1" + ":" + port + ":client"
-		clientNet = NewMockNetwork(clientAddr, cfg.MockNetworkRegistry, cfg.DropRate)
-		serverNet = NewMockNetwork(ip, cfg.MockNetworkRegistry, cfg.DropRate)
+		clientNet = NewMockNetwork(clientAddr, cfg.MockNetworkRegistry)
+		serverNet = NewMockNetwork(ip, cfg.MockNetworkRegistry)
 	} else {
 		var err error
 		clientNet, err = NewUDPNetwork("") // ephemeral port

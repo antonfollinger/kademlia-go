@@ -49,7 +49,7 @@ func (node *Node) Cli(in io.Reader, out io.Writer) {
 			fmt.Fprintln(out, "Shutting down node.")
 			return
 		case "print":
-			fmt.Fprintln(out, "Print not implemented for testable CLI.")
+			node.PrintRoutingTable()
 		default:
 			fmt.Fprintln(out, "Unknown command. Use put <content>, get <hash>, or exit.")
 		}

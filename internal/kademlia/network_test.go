@@ -3,13 +3,12 @@ package kademlia
 import (
 	"fmt"
 	"sync"
-	"sync/atomic"
 	"testing"
 )
 
 func Test_Kademlia_NetworkEmulation_WithPacketDrop(t *testing.T) {
 	const nodeCount = 100
-	const messagesPerNode = 1
+	const droprate = 0.5
 
 	// Create global MockRegistry
 	registry := NewMockRegistry()
@@ -42,8 +41,6 @@ func Test_Kademlia_NetworkEmulation_WithPacketDrop(t *testing.T) {
 			node, err := InitKademlia(addr[len("127.0.0.1:"):], isBootstrap, bootstrapIP, func(cfg *KademliaConfig) {
 				cfg.isMockNetwork = true
 				cfg.MockNetworkRegistry = registry
-				cfg.DropRate = 0.1
-				cfg.SkipBootstrapPing = true
 			})
 			if err != nil {
 				t.Logf("Node %d creation failed: %v", i, err)
@@ -61,31 +58,38 @@ func Test_Kademlia_NetworkEmulation_WithPacketDrop(t *testing.T) {
 		}
 	}
 
-	var success, dropped int64
-	var sendWg sync.WaitGroup
-	sendWg.Add(totalNodes - 1)
-	for i := 1; i < totalNodes; i++ {
-		go func(i int) {
-			defer sendWg.Done()
-			sender := nodes[i]
-			receiver := nodes[i-1]
-			t.Logf("Node %d sending %d PINGs to node %d", i, messagesPerNode, i-1)
-			for m := 0; m < messagesPerNode; m++ {
-				_, err := sender.Client.SendPingMessage(receiver.Node.GetSelfContact())
-				if err != nil {
-					t.Logf("PING from node %d to node %d failed: %v", i, i-1, err)
-					atomic.AddInt64(&dropped, 1)
-				} else {
-					t.Logf("PING from node %d to node %d succeeded", i, i-1)
-					atomic.AddInt64(&success, 1)
-				}
-			}
-		}(i)
+	// Bootstrap node puts up a single value
+	bootstrap := nodes[0]
+	value := "test123"
+	// Use client to store value in the network
+	req, err := bootstrap.Client.SendStoreMessage([]byte(value))
+	// Hashed key for value
+	key := req.Payload.Key
+	if err != nil {
+		t.Fatalf("Bootstrap node failed to store value: %v", err)
+	} else {
+		t.Logf("Bootstrap node stored value '%s' under key '%s'", value, key)
 	}
-	sendWg.Wait()
 
-	t.Logf("Total PINGs sent: %d, Success: %d, Dropped: %d", nodeCount*messagesPerNode, success, dropped)
-	if dropped == 0 {
-		t.Errorf("No packets were dropped, expected some drops in mock network")
+	// Randomly delete nodes from the network using droprate
+	deleted := make(map[int]bool)
+	for i := 1; i < totalNodes; i++ {
+		// Don't delete bootstrap node
+		if randFloat := float32(i%10) / 10.0; randFloat < droprate {
+			nodes[i] = nil
+			deleted[i] = true
+			t.Logf("Node %d deleted from network", i)
+		}
+	}
+
+	// Bootstrap tries to fetch the value again
+	res, err := bootstrap.Client.SendFindValueMessage(key)
+	val := string(res.Payload.Data)
+	if err != nil {
+		t.Errorf("Bootstrap node failed to fetch value after deletions: %v", err)
+	} else if val != value {
+		t.Errorf("Bootstrap node fetched wrong value: got '%v', want '%v'", val, value)
+	} else {
+		t.Errorf("Bootstrap node successfully fetched value '%s' after deletions", val)
 	}
 }

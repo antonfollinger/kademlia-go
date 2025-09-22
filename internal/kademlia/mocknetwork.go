@@ -2,7 +2,6 @@ package kademlia
 
 import (
 	"fmt"
-	"math/rand"
 	"sync"
 )
 
@@ -19,15 +18,13 @@ type MockRegistry struct {
 type MockNetwork struct {
 	addr     string
 	registry *MockRegistry
-	dropRate float64
 }
 
-func NewMockNetwork(addr string, registry *MockRegistry, droprate float64) *MockNetwork {
+func NewMockNetwork(addr string, registry *MockRegistry) *MockNetwork {
 	registry.Register(addr)
 	return &MockNetwork{
 		addr:     addr,
 		registry: registry,
-		dropRate: droprate,
 	}
 }
 
@@ -55,9 +52,6 @@ func (m *MockNetwork) GetConn() string {
 }
 
 func (m *MockNetwork) SendMessage(addr string, data []byte) error {
-	if rand.Float64() < m.dropRate {
-		return nil // simulate drop
-	}
 	if ch, ok := m.registry.Get(addr); ok {
 		ch <- mockPacket{src: m.addr, data: data}
 		return nil
