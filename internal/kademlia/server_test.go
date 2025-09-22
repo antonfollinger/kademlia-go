@@ -9,9 +9,9 @@ import (
 func Test_Server_InitServer_Success(t *testing.T) {
 	myPort = "1234"
 	node := &MockNodeAPI{}
-	network, err := NewUDPNetwork(":" + myPort)
-	assert.NoError(t, err)
-	server, err := InitServer(node, network)
+	//network, err := NewUDPNetwork(":" + myPort)
+	//assert.NoError(t, err)
+	server, err := InitServer(node /*network*/)
 	assert.NoError(t, err)
 	assert.NotNil(t, server)
 	assert.NotNil(t, server.incoming)

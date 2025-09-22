@@ -3,17 +3,17 @@ package kademlia
 import (
 	"encoding/json"
 	"fmt"
-	"log"
+	"net"
 )
 
 type IncomingRPC struct {
 	RPC  RPCMessage
-	Addr string
+	Addr *net.UDPAddr
 }
 
 type OutgoingRPC struct {
 	RPC  RPCMessage
-	Addr string
+	Addr *net.UDPAddr
 }
 
 const (
@@ -23,22 +23,30 @@ const (
 
 type Server struct {
 	node     NodeAPI
-	network  Network
+	conn     *net.UDPConn
 	incoming chan IncomingRPC
 	outgoing chan OutgoingRPC
 }
 
-func InitServer(node NodeAPI, network Network) (*Server, error) {
+func InitServer(node NodeAPI) (*Server, error) {
+	ip := node.GetSelfContact().Address
+	udpAddr, err := net.ResolveUDPAddr("udp", ip)
+	if err != nil {
+		return nil, err
+	}
+
+	conn, err := net.ListenUDP("udp", udpAddr)
+	if err != nil {
+		return nil, err
+	}
+
 	s := &Server{
 		node:     node,
-		network:  network,
+		conn:     conn,
 		incoming: make(chan IncomingRPC, IncomingBufferSize),
 		outgoing: make(chan OutgoingRPC, OutgoingBufferSize),
 	}
-	log.Println("Server listening on: ", network.GetConn())
-
-	s.RunServer()
-
+	fmt.Println("Server listening on: ", ip)
 	return s, nil
 }
 
@@ -49,25 +57,25 @@ func (s *Server) RunServer() {
 }
 
 func (s *Server) listen() {
+	buf := make([]byte, IncomingBufferSize)
 	for {
-		addrStr, data, err := s.network.ReceiveMessage()
+		n, addr, err := s.conn.ReadFromUDP(buf)
 		if err != nil {
 			fmt.Println("listen error:", err)
 			continue
 		}
-
 		var rpc RPCMessage
-		if err := json.Unmarshal(data, &rpc); err != nil {
+
+		if err := json.Unmarshal(buf[:n], &rpc); err != nil {
 			fmt.Println("Unmarshal error:", err)
 			continue
 		}
-
 		if rpc.Query {
 			select {
-			case s.incoming <- IncomingRPC{RPC: rpc, Addr: addrStr}:
+			case s.incoming <- IncomingRPC{RPC: rpc, Addr: addr}:
 				// Packet accepted
 			default:
-				fmt.Printf("DROPPED PACKET from %v: incoming channel overflow\n", addrStr)
+				fmt.Printf("DROPPED PACKET from %v: incoming channel overflow\n", addr)
 			}
 		}
 	}
@@ -127,8 +135,6 @@ func (s *Server) respond() {
 	for {
 		out := <-s.outgoing
 		data, _ := json.Marshal(out.RPC)
-		if out.Addr != "" {
-			_ = s.network.SendMessage(out.Addr, data)
-		}
+		_, _ = s.conn.WriteToUDP(data, out.Addr)
 	}
 }
