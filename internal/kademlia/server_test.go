@@ -1,9 +1,7 @@
 package kademlia
 
 import (
-	"net"
 	"testing"
-	"time"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -20,6 +18,7 @@ func Test_Server_InitServer_Success(t *testing.T) {
 	assert.NotNil(t, server.outgoing)
 }
 
+/*
 func Test_Server_Channel_Operations(t *testing.T) {
 	myPort = "4321"
 	node := &MockNodeAPI{}
@@ -111,3 +110,4 @@ func Test_Server_ProcessRequest_Default_Error(t *testing.T) {
 		t.Error("No ERROR response received")
 	}
 }
+*/

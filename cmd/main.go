@@ -51,7 +51,8 @@ func main() {
 		}
 	}
 
-	k.Server.RunServer()
+	time.Sleep(8 * time.Second)
+	k.Node.PrintRoutingTable()
 
 	k.Node.Cli(os.Stdin, os.Stdout)
 }

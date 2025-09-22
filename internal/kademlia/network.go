@@ -43,6 +43,7 @@ func (u *UDPNetwork) SendMessage(addr string, data []byte) error {
 	if err != nil {
 		return err
 	}
+
 	_, err = u.conn.WriteToUDP(data, udpAddr)
 	return err
 }

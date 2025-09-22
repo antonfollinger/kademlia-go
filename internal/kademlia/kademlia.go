@@ -11,6 +11,9 @@ type KademliaConfig struct {
 	SkipBootstrapPing    bool
 	BootstrapPingRetries int
 	BootstrapPingDelayMs int
+	isMockNetwork        bool
+	MockNetworkRegistry  *MockRegistry
+	DropRate             float64
 }
 
 type KademliaOption func(*KademliaConfig)
@@ -32,13 +35,21 @@ func InitKademlia(port string, bootstrap bool, bootstrapIP string, opts ...Kadem
 		SkipBootstrapPing:    false,
 		BootstrapPingRetries: 5,
 		BootstrapPingDelayMs: 2000,
+		isMockNetwork:        false,
+		MockNetworkRegistry:  nil,
+		DropRate:             0,
 	}
 	for _, opt := range opts {
 		opt(cfg)
 	}
 
 	k := &Kademlia{}
-	ip := GetLocalIP() + ":" + port
+	var ip string
+	if cfg.isMockNetwork {
+		ip = "127.0.0.1" + ":" + port
+	} else {
+		ip = GetLocalIP() + ":" + port
+	}
 
 	log.Println("Local_ip: ", ip)
 	log.Println("Bootstrap IP: ", bootstrapIP)
@@ -50,12 +61,28 @@ func InitKademlia(port string, bootstrap bool, bootstrapIP string, opts ...Kadem
 		return nil, nodeErr
 	}
 
+	// Network selection
+	var clientNet Network
+	var serverNet Network
+	if cfg.isMockNetwork {
+		// Use unique addresses for client and server to avoid channel sharing
+		clientAddr := "127.0.0.1" + ":" + port + ":client"
+		clientNet = NewMockNetwork(clientAddr, cfg.MockNetworkRegistry, cfg.DropRate)
+		serverNet = NewMockNetwork(ip, cfg.MockNetworkRegistry, cfg.DropRate)
+	} else {
+		var err error
+		clientNet, err = NewUDPNetwork("") // ephemeral port
+		if err != nil {
+			return nil, err
+		}
+		serverNet, err = NewUDPNetwork(ip)
+		if err != nil {
+			return nil, err
+		}
+	}
+
 	// Client
 	var clientErr error
-	clientNet, err := NewUDPNetwork("") // ephemeral port
-	if err != nil {
-		return nil, err
-	}
 	k.Client, clientErr = InitClient(k.Node, clientNet)
 	if clientErr != nil {
 		return nil, clientErr
@@ -63,10 +90,6 @@ func InitKademlia(port string, bootstrap bool, bootstrapIP string, opts ...Kadem
 
 	// Server
 	var serverErr error
-	serverNet, err := NewUDPNetwork(ip)
-	if err != nil {
-		return nil, err
-	}
 	k.Server, serverErr = InitServer(k.Node, serverNet)
 	if serverErr != nil {
 		return nil, serverErr
@@ -77,7 +100,6 @@ func InitKademlia(port string, bootstrap bool, bootstrapIP string, opts ...Kadem
 	bootstrapID := NewKademliaID("0000000000000000000000000000000000000000")
 
 	if !k.Node.RoutingTable.me.ID.Equals(bootstrapID) && !cfg.SkipBootstrapPing {
-
 		// Random delay to reduce package drops
 		time.Sleep(time.Duration(rand.Intn(cfg.BootstrapPingDelayMs)) * time.Millisecond)
 
@@ -92,14 +114,16 @@ func InitKademlia(port string, bootstrap bool, bootstrapIP string, opts ...Kadem
 			time.Sleep(time.Duration(rand.Intn(cfg.BootstrapPingDelayMs)) * time.Millisecond)
 		}
 		if err1 != nil {
-			println("failed to ping bootstrap node")
+			println(ip, " failed to ping bootstrap node on", bootstrapIP)
 		}
 	}
 
-	// Integrate JoinNetwork for both bootstrap and peer nodes
-	err = k.Node.JoinNetwork()
-	if err != nil {
-		log.Printf("failed to join network: %v\n", err)
+	if !cfg.SkipBootstrapPing {
+		// Integrate JoinNetwork for both bootstrap and peer nodes
+		err := k.Node.JoinNetwork()
+		if err != nil {
+			log.Printf("failed to join network: %v\n", err)
+		}
 	}
 
 	return k, nil

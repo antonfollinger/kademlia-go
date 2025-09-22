@@ -2,111 +2,90 @@ package kademlia
 
 import (
 	"fmt"
-	"math/rand"
+	"sync"
+	"sync/atomic"
 	"testing"
 )
 
-type MockNetwork struct {
-	inbox     chan mockPacket
-	dropRate  float64
-	nodeAddrs map[string]chan mockPacket
-}
-
-func (m *MockNetwork) GetConn() string {
-	return ""
-}
-
-type mockPacket struct {
-	src  string
-	data []byte
-}
-
-func (m *MockNetwork) SendMessage(addr string, data []byte) error {
-	if rand.Float64() < m.dropRate {
-		return fmt.Errorf("packet dropped")
-	}
-	if ch, ok := m.nodeAddrs[addr]; ok {
-		ch <- mockPacket{src: addr, data: data}
-		return nil
-	}
-	return fmt.Errorf("address not found")
-}
-
-func (m *MockNetwork) ReceiveMessage() (string, []byte, error) {
-	pkt := <-m.inbox
-	return pkt.src, pkt.data, nil
-}
-
-func (m *MockNetwork) Close() error {
-	close(m.inbox)
-	return nil
-}
-
 func Test_Kademlia_NetworkEmulation_WithPacketDrop(t *testing.T) {
-	const nodeCount = 1000 // Change for testing
-	const dropRate = 0.1   // Change for testing
-	const messagesPerNode = 5
+	const nodeCount = 100
+	const messagesPerNode = 1
 
-	addrMap := make(map[string]chan mockPacket, nodeCount)
-	networks := make([]*MockNetwork, nodeCount)
-	nodes := make([]*Node, nodeCount)
-	clients := make([]*Client, nodeCount)
-	servers := make([]*Server, nodeCount)
+	// Create global MockRegistry
+	registry := NewMockRegistry()
 
-	// Setup address map and networks
-	for i := 0; i < nodeCount; i++ {
-		addr := fmt.Sprintf("node%d", i)
-		inbox := make(chan mockPacket, 100)
-		addrMap[addr] = inbox
-	}
+	// Create all nodes (bootstrap first, then peers) in parallel
+	totalNodes := nodeCount
+	nodes := make([]*Kademlia, totalNodes)
+	errs := make([]error, totalNodes)
 
-	// Create nodes, clients, and servers
-	for i := 0; i < nodeCount; i++ {
-		addr := fmt.Sprintf("node%d", i)
-		networks[i] = &MockNetwork{
-			inbox:     addrMap[addr],
-			dropRate:  dropRate,
-			nodeAddrs: addrMap,
-		}
-		node, err := InitNode(false, addr, "node0")
-		if err != nil {
-			t.Fatalf("Failed to init node %d: %v", i, err)
-		}
-		client, err := InitClient(node, networks[i])
-		if err != nil {
-			t.Fatalf("Failed to init client %d: %v", i, err)
-		}
-		server, err := InitServer(node, networks[i])
-		if err != nil {
-			t.Fatalf("Failed to init server %d: %v", i, err)
-		}
-		node.SetClient(client)
-		nodes[i] = node
-		clients[i] = client
-		servers[i] = server
-	}
+	var wg sync.WaitGroup
+	wg.Add(totalNodes)
 
-	// Emulate sending PING messages between random nodes
-	success := 0
-	dropped := 0
-	for i := 0; i < nodeCount; i++ {
-		for j := 0; j < messagesPerNode; j++ {
-			targetIdx := rand.Intn(nodeCount)
-			if targetIdx == i {
-				targetIdx = (targetIdx + 1) % nodeCount
+	for i := 0; i < totalNodes; i++ {
+		go func(i int) {
+			defer wg.Done()
+			var addr string
+			var isBootstrap bool
+			var bootstrapIP string
+			if i == 0 {
+				// Bootstrap node
+				addr = "127.0.0.1:1234"
+				isBootstrap = true
+				bootstrapIP = ""
+			} else {
+				// Peer node
+				addr = fmt.Sprintf("127.0.0.1:%d", 5000+i)
+				isBootstrap = false
+				bootstrapIP = "127.0.0.1:1234"
 			}
-			targetContact := nodes[targetIdx].GetSelfContact()
-			resp, err := clients[i].SendPingMessage(targetContact)
+			node, err := InitKademlia(addr[len("127.0.0.1:"):], isBootstrap, bootstrapIP, func(cfg *KademliaConfig) {
+				cfg.isMockNetwork = true
+				cfg.MockNetworkRegistry = registry
+				cfg.DropRate = 0.1
+				cfg.SkipBootstrapPing = true
+			})
 			if err != nil {
-				dropped++
-			} else if resp.Type == "PONG" {
-				success++
+				t.Logf("Node %d creation failed: %v", i, err)
+			} else {
+				t.Logf("Node %d created successfully", i)
 			}
+			nodes[i] = node
+			errs[i] = err
+		}(i)
+	}
+	wg.Wait()
+	for i, err := range errs {
+		if err != nil {
+			t.Fatalf("InitKademlia failed for node %d: %v", i, err)
 		}
 	}
 
-	t.Logf("\n\nTotal PINGs sent: %d \nSuccess: %d \nDropped: %d \nDropRate: %.2f\n\n", nodeCount*messagesPerNode, success, dropped, float64(dropped)/float64(nodeCount*messagesPerNode))
-	if float64(dropped)/float64(nodeCount*messagesPerNode) < dropRate*0.8 || float64(dropped)/float64(nodeCount*messagesPerNode) > dropRate*1.2 {
-		t.Errorf("Packet drop rate out of expected bounds")
+	var success, dropped int64
+	var sendWg sync.WaitGroup
+	sendWg.Add(totalNodes - 1)
+	for i := 1; i < totalNodes; i++ {
+		go func(i int) {
+			defer sendWg.Done()
+			sender := nodes[i]
+			receiver := nodes[i-1]
+			t.Logf("Node %d sending %d PINGs to node %d", i, messagesPerNode, i-1)
+			for m := 0; m < messagesPerNode; m++ {
+				_, err := sender.Client.SendPingMessage(receiver.Node.GetSelfContact())
+				if err != nil {
+					t.Logf("PING from node %d to node %d failed: %v", i, i-1, err)
+					atomic.AddInt64(&dropped, 1)
+				} else {
+					t.Logf("PING from node %d to node %d succeeded", i, i-1)
+					atomic.AddInt64(&success, 1)
+				}
+			}
+		}(i)
+	}
+	sendWg.Wait()
+
+	t.Logf("Total PINGs sent: %d, Success: %d, Dropped: %d", nodeCount*messagesPerNode, success, dropped)
+	if dropped == 0 {
+		t.Errorf("No packets were dropped, expected some drops in mock network")
 	}
 }

@@ -29,7 +29,7 @@ func InitClient(node NodeAPI, network Network) (*Client, error) {
 		network: network,
 	}
 
-	log.Println("Client listening on: ", network.GetConn())
+	//log.Println("Client listening on: ", network.GetConn())
 
 	go c.listen()
 
@@ -94,7 +94,7 @@ func (client *Client) SendPingMessage(target Contact) (RPCMessage, error) {
 		client.node.AddContact(resp.Payload.SourceContact)
 		log.Println("PING response received")
 		return resp, nil
-	case <-time.After(5 * time.Second):
+	case <-time.After(100 * time.Millisecond):
 		return RPCMessage{}, fmt.Errorf("PING Timeout")
 	}
 }

@@ -4,17 +4,16 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
-	"net"
 )
 
 type IncomingRPC struct {
 	RPC  RPCMessage
-	Addr *net.UDPAddr
+	Addr string
 }
 
 type OutgoingRPC struct {
 	RPC  RPCMessage
-	Addr *net.UDPAddr
+	Addr string
 }
 
 const (
@@ -37,6 +36,9 @@ func InitServer(node NodeAPI, network Network) (*Server, error) {
 		outgoing: make(chan OutgoingRPC, OutgoingBufferSize),
 	}
 	log.Println("Server listening on: ", network.GetConn())
+
+	s.RunServer()
+
 	return s, nil
 }
 
@@ -60,17 +62,12 @@ func (s *Server) listen() {
 			continue
 		}
 
-		var addr *net.UDPAddr
-		if addrStr != "" {
-			addr, _ = net.ResolveUDPAddr("udp", addrStr)
-		}
-
 		if rpc.Query {
 			select {
-			case s.incoming <- IncomingRPC{RPC: rpc, Addr: addr}:
+			case s.incoming <- IncomingRPC{RPC: rpc, Addr: addrStr}:
 				// Packet accepted
 			default:
-				fmt.Printf("DROPPED PACKET from %v: incoming channel overflow\n", addr)
+				fmt.Printf("DROPPED PACKET from %v: incoming channel overflow\n", addrStr)
 			}
 		}
 	}
@@ -130,8 +127,8 @@ func (s *Server) respond() {
 	for {
 		out := <-s.outgoing
 		data, _ := json.Marshal(out.RPC)
-		if out.Addr != nil {
-			_ = s.network.SendMessage(out.Addr.String(), data)
+		if out.Addr != "" {
+			_ = s.network.SendMessage(out.Addr, data)
 		}
 	}
 }
