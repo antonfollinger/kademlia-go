@@ -71,8 +71,9 @@ func (node *Node) JoinNetwork() error {
 			bootstrapContact := contacts[0]
 			var err error
 			for i := 0; i < 3; i++ { // Try up to 3 times
-				_, err = node.Client.SendPingMessage(bootstrapContact)
+				rpc, err := node.Client.SendPingMessage(bootstrapContact)
 				if err == nil {
+					node.AddContact(rpc.Payload.SourceContact)
 					break
 				}
 				time.Sleep(300 * time.Millisecond)
