@@ -52,6 +52,7 @@ func main() {
 	}
 
 	k.Server.RunServer()
+
 	k.Node.PrintRoutingTable()
 
 	k.Node.Cli(os.Stdin, os.Stdout)

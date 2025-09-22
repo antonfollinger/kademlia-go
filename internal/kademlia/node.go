@@ -1,7 +1,7 @@
 package kademlia
 
 import (
-	"fmt"
+	"log"
 	"sort"
 	"sync"
 )
@@ -43,11 +43,11 @@ func InitNode(isBootstrap bool, ip string, bootstrapIP string) (*Node, error) {
 	if !isBootstrap {
 		bootstrap := NewContact(NewKademliaID("0000000000000000000000000000000000000000"), bootstrapIP)
 		routingTable.AddContact(bootstrap)
-		fmt.Printf("\nBootstrap added with: \n Address: %s\n Contact: %s\n ID: %s\n", bootstrap.Address, bootstrap.String(), bootstrap.ID.String())
+		log.Printf("\nBootstrap added with: \n Address: %s\n Contact: %s\n ID: %s\n", bootstrap.Address, bootstrap.String(), bootstrap.ID.String())
 
 	}
 
-	fmt.Printf("\nNew node was created with: \n Address: %s\n Contact: %s\n ID: %s\n\n", me.Address, me.String(), me.ID.String())
+	log.Printf("\nNew node was created with: \n Address: %s\n Contact: %s\n ID: %s\n\n", me.Address, me.String(), me.ID.String())
 
 	node := &Node{
 		Id:           kademliaID,
@@ -61,13 +61,13 @@ func InitNode(isBootstrap bool, ip string, bootstrapIP string) (*Node, error) {
 // JoinNetwork performs an iterative lookup on the node's own ID to populate the routing table with nearby contacts
 func (node *Node) JoinNetwork() error {
 
-	fmt.Println("Joining network: performing iterative lookup on self...")
+	log.Println("Joining network: performing iterative lookup on self...")
 	_, err := node.IterativeFindNode(node.Id)
 	if err != nil {
-		fmt.Printf("JoinNetwork: IterativeFindNode error: %v\n", err)
+		log.Printf("JoinNetwork: IterativeFindNode error: %v\n", err)
 		return err
 	}
-	fmt.Println("JoinNetwork: Routing table updated with nearby contacts.")
+	log.Println("JoinNetwork: Routing table updated with nearby contacts.")
 	return nil
 }
 
@@ -99,12 +99,12 @@ func (node *Node) AddContact(contact Contact) {
 
 		if err == nil && resp.Type == "PONG" {
 			// Last contact responded, do not add new contact
-			fmt.Printf("Contact %s responded to ping, not adding new contact %s\n", lastContact.String(), contact.String())
+			log.Printf("Contact %s responded to ping, not adding new contact %s\n", lastContact.String(), contact.String())
 		} else {
 			// Last contact did not respond, remove and add new contact
 			bucket.list.Remove(lastContactElem)
 			node.RoutingTable.AddContact(contact)
-			fmt.Printf("Contact %s did not respond, replaced with new contact %s\n", lastContact.String(), contact.String())
+			log.Printf("Contact %s did not respond, replaced with new contact %s\n", lastContact.String(), contact.String())
 		}
 	}
 }
@@ -157,7 +157,7 @@ func (node *Node) IterativeFindNode(target *KademliaID) ([]Contact, error) {
 			for _, c := range contacts {
 				if !queried[c.ID.String()] && !inShortlist[c.ID.String()] {
 					shortlist = append(shortlist, c)
-					inShortlist[c.ID.String()] = true // Mark as in shortlist
+					inShortlist[c.ID.String()] = true
 					updated = true
 				}
 			}
@@ -197,24 +197,24 @@ func (node *Node) Store(key string, data []byte) {
 }
 
 func (node *Node) PrintStore() {
-	fmt.Printf("Store: %v\n", node.Storage)
+	log.Printf("Store: %v\n", node.Storage)
 }
 
 func (node *Node) PrintRoutingTable() {
 	printRoutingTable := func() {
-		fmt.Printf("\n================= Routing Table %s =================\n", node.RoutingTable.me.ID.String())
-		fmt.Printf("Self: %s (%s)\n", node.RoutingTable.me.Address, node.RoutingTable.me.ID.String())
+		log.Printf("\n================= Routing Table %s =================\n", node.RoutingTable.me.ID.String())
+		log.Printf("Self: %s (%s)\n", node.RoutingTable.me.Address, node.RoutingTable.me.ID.String())
 		for i, bucket := range node.RoutingTable.buckets {
 			if bucket.Len() == 0 {
 				continue
 			}
-			fmt.Printf("Bucket %d:\n", i)
+			log.Printf("Bucket %d:\n", i)
 			for e := bucket.list.Front(); e != nil; e = e.Next() {
 				contact := e.Value.(Contact)
-				fmt.Printf("  - %s\t(%s)\t[%s]\n", contact.Address, contact.ID.String(), contact.distance.String())
+				log.Printf("  - %s\t(%s)\t[%s]\n", contact.Address, contact.ID.String(), contact.distance.String())
 			}
 		}
-		fmt.Println("==========================================================================================")
+		log.Println("==========================================================================================")
 	}
 	printRoutingTable()
 }
