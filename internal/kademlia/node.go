@@ -70,7 +70,7 @@ func (node *Node) JoinNetwork() error {
 		if len(contacts) > 0 {
 			bootstrapContact := contacts[0]
 			var err error
-			for i := 0; i < 3; i++ { // Try up to 3 times
+			for range 3 { // Try up to 3 times
 				rpc, err := node.Client.SendPingMessage(bootstrapContact)
 				if err == nil {
 					node.AddContact(rpc.Payload.SourceContact)
