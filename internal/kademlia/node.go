@@ -4,6 +4,7 @@ import (
 	"log"
 	"sort"
 	"sync"
+	"time"
 )
 
 const alpha = 3
@@ -43,11 +44,7 @@ func InitNode(isBootstrap bool, ip string, bootstrapIP string) (*Node, error) {
 	if !isBootstrap {
 		bootstrap := NewContact(NewKademliaID("0000000000000000000000000000000000000000"), bootstrapIP)
 		routingTable.AddContact(bootstrap)
-		log.Printf("\nBootstrap added with: \n Address: %s\n Contact: %s\n ID: %s\n", bootstrap.Address, bootstrap.String(), bootstrap.ID.String())
-
 	}
-
-	log.Printf("\nNew node was created with: \n Address: %s\n Contact: %s\n ID: %s\n\n", me.Address, me.String(), me.ID.String())
 
 	node := &Node{
 		Id:           kademliaID,
@@ -61,14 +58,40 @@ func InitNode(isBootstrap bool, ip string, bootstrapIP string) (*Node, error) {
 // JoinNetwork performs an iterative lookup on the node's own ID to populate the routing table with nearby contacts
 func (node *Node) JoinNetwork() error {
 
-	log.Println("Joining network: performing iterative lookup on self...")
-	_, err := node.IterativeFindNode(node.Id)
-	if err != nil {
-		log.Printf("JoinNetwork: IterativeFindNode error: %v\n", err)
-		return err
+	selfID := node.GetSelfContact().ID
+	bootstrapID := NewKademliaID("0000000000000000000000000000000000000000")
+
+	if selfID.Equals(bootstrapID) {
+		return nil
+	} else {
+		// If this is a peer (not bootstrap), ping the bootstrap node
+		// Find bootstrap contact in routing table
+		contacts := node.RoutingTable.FindClosestContacts(bootstrapID, 1)
+		if len(contacts) > 0 {
+			bootstrapContact := contacts[0]
+			var err error
+			for range 3 { // Try up to 3 times
+				rpc, err := node.Client.SendPingMessage(bootstrapContact)
+				if err == nil {
+					node.AddContact(rpc.Payload.SourceContact)
+					break
+				}
+				time.Sleep(300 * time.Millisecond)
+			}
+			if err != nil {
+				log.Printf("%s failed to ping bootstrap node on %s: %v\n", node.GetSelfContact().Address, bootstrapContact.Address, err)
+			}
+		} else {
+			log.Printf("Bootstrap contact not found in routing table for %s\n", node.GetSelfContact().Address)
+		}
+		// Populate routing table with nearby contacts
+		_, err := node.IterativeFindNode(node.Id)
+		if err != nil {
+			log.Printf("JoinNetwork: IterativeFindNode error: %v\n", err)
+			return err
+		}
+		return nil
 	}
-	log.Println("JoinNetwork: Routing table updated with nearby contacts.")
-	return nil
 }
 
 func (node *Node) SetClient(client ClientAPI) {
@@ -79,34 +102,46 @@ func (node *Node) GetSelfContact() (self Contact) {
 	return node.RoutingTable.me
 }
 
-func (node *Node) AddContact(contact Contact) {
-	node.mu.Lock()
-	defer node.mu.Unlock()
+func (n *Node) AddContact(c Contact) {
 
-	if contact.ID.Equals(node.GetSelfContact().ID) {
+	// Should not add self
+	if c == n.GetSelfContact() {
 		return
 	}
 
-	bucket := node.RoutingTable.buckets[node.RoutingTable.getBucketIndex(contact.ID)]
-
+	n.mu.Lock()
+	bucketIndex := n.RoutingTable.getBucketIndex(c.ID)
+	bucket := n.RoutingTable.buckets[bucketIndex]
+	// Calculate and set the contact's distance field before adding
+	c.distance = n.Id.CalcDistance(c.ID)
 	if bucket.Len() < bucketSize {
-		node.RoutingTable.AddContact(contact)
-	} else {
-		// Ping last indexed contact
-		lastContactElem := bucket.list.Back()
-		lastContact := lastContactElem.Value.(Contact)
-		resp, err := node.Client.SendPingMessage(lastContact)
-
-		if err == nil && resp.Type == "PONG" {
-			// Last contact responded, do not add new contact
-			log.Printf("Contact %s responded to ping, not adding new contact %s\n", lastContact.String(), contact.String())
-		} else {
-			// Last contact did not respond, remove and add new contact
-			bucket.list.Remove(lastContactElem)
-			node.RoutingTable.AddContact(contact)
-			log.Printf("Contact %s did not respond, replaced with new contact %s\n", lastContact.String(), contact.String())
-		}
+		bucket.AddContact(c)
+		n.mu.Unlock()
+		return
 	}
+	// If full, copy LRU contact to ping after releasing lock
+	lru := bucket.list.Back().Value.(Contact)
+	n.mu.Unlock()
+
+	// Ping LRU outside lock
+	alive := false
+	if resp, err := n.Client.SendPingMessage(lru); err == nil && resp.Type == "PONG" {
+		alive = true
+	}
+
+	n.mu.Lock()
+	defer n.mu.Unlock()
+
+	bucketIndex = n.RoutingTable.getBucketIndex(c.ID)
+	bucket = n.RoutingTable.buckets[bucketIndex] // re-fetch in case table changed
+	if bucket.Len() < bucketSize {
+		bucket.AddContact(c)
+	} else if !alive {
+		// evict old LRU and add new contact
+		bucket.list.Remove(bucket.list.Back())
+		bucket.AddContact(c)
+	}
+	// else: keep existing LRU, drop new
 }
 
 func (node *Node) LookupClosestContacts(target Contact) []Contact {
@@ -115,46 +150,65 @@ func (node *Node) LookupClosestContacts(target Contact) []Contact {
 
 func (node *Node) IterativeFindNode(target *KademliaID) ([]Contact, error) {
 	shortlist := node.LookupClosestContacts(NewContact(target, ""))
+	if len(shortlist) == 0 {
+		return nil, nil
+	}
 	queried := make(map[string]bool)
 	inShortlist := make(map[string]bool) // Track contacts in shortlist
 
 	// Initialize inShortlist with initial shortlist
 	for _, c := range shortlist {
+		if c.ID == nil {
+			continue
+		}
 		inShortlist[c.ID.String()] = true
 	}
 
 	for {
 		batch := []Contact{}
-
-		// take alpha closest unqueried nodes
 		for _, c := range shortlist {
+			if c.ID == nil {
+				continue
+			}
 			if !queried[c.ID.String()] && len(batch) < alpha {
 				batch = append(batch, c)
 			}
 		}
-
-		// if we cannot find any closer nodes then we are done
 		if len(batch) == 0 {
 			break
 		}
-
 		results := make(chan []Contact, len(batch))
 		for _, contact := range batch {
+			if contact.ID == nil {
+				results <- nil
+				continue
+			}
 			queried[contact.ID.String()] = true
 			go func(c Contact) {
 				contacts, err := node.Client.SendFindNodeMessage(target, c)
-				if err != nil {
+				if err != nil || contacts == nil {
 					results <- nil
 					return
 				}
 				results <- contacts
 			}(contact)
 		}
-
 		updated := false
 		for i := 0; i < len(batch); i++ {
-			contacts := <-results
+			var contacts []Contact
+			select {
+			case contacts = <-results:
+				// got result
+			case <-time.After(2 * time.Second):
+				contacts = nil
+			}
+			if contacts == nil {
+				continue
+			}
 			for _, c := range contacts {
+				if c.ID == nil {
+					continue
+				}
 				if !queried[c.ID.String()] && !inShortlist[c.ID.String()] {
 					shortlist = append(shortlist, c)
 					inShortlist[c.ID.String()] = true
@@ -162,19 +216,15 @@ func (node *Node) IterativeFindNode(target *KademliaID) ([]Contact, error) {
 				}
 			}
 		}
-
 		if !updated {
 			break
 		}
-
-		// Sort the shortlist slice
 		sort.Slice(shortlist, func(i, j int) bool {
 			di := shortlist[i].ID.CalcDistance(target)
 			dj := shortlist[j].ID.CalcDistance(target)
 			return di.Less(dj)
 		})
 	}
-
 	k := alpha
 	if len(shortlist) < k {
 		k = len(shortlist)

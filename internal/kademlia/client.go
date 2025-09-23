@@ -4,15 +4,16 @@ import (
 	"crypto/sha1"
 	"encoding/json"
 	"fmt"
-	"net"
+	"log"
 	"sync"
 	"time"
 )
 
 type Client struct {
 	node    NodeAPI
-	conn    *net.UDPConn
+	network Network
 	pending sync.Map
+	done    chan struct{}
 }
 
 type ClientAPI interface {
@@ -22,20 +23,13 @@ type ClientAPI interface {
 	SendFindValueMessage(hash string) (RPCMessage, error)
 }
 
-func InitClient(node NodeAPI) (*Client, error) {
-
-	// Create connection with ephemeral port
-	conn, err := net.ListenUDP("udp", nil)
-	if err != nil {
-		return nil, err
-	}
+func InitClient(node NodeAPI, network Network) (*Client, error) {
 
 	c := &Client{
-		node: node,
-		conn: conn,
+		node:    node,
+		network: network,
+		done:    make(chan struct{}),
 	}
-
-	fmt.Println("Client listening on: ", conn.LocalAddr())
 
 	go c.listen()
 
@@ -43,22 +37,32 @@ func InitClient(node NodeAPI) (*Client, error) {
 }
 
 func (client *Client) listen() {
-	buf := make([]byte, 8192)
 	for {
-		n, _, err := client.conn.ReadFromUDP(buf)
-		if err != nil {
-			continue
-		}
-		var resp RPCMessage
-		if err := json.Unmarshal(buf[:n], &resp); err != nil {
-			continue
-		}
+		select {
+		case <-client.done:
+			return
+		default:
+			_, data, err := client.network.ReceiveMessage()
+			if err != nil {
+				continue
+			}
+			var resp RPCMessage
+			if err := json.Unmarshal(data, &resp); err != nil {
+				continue
+			}
 
-		if ch, ok := client.pending.Load(resp.PacketID); ok {
-			ch.(chan RPCMessage) <- resp
-			client.pending.Delete(resp.PacketID)
+			if ch, ok := client.pending.Load(resp.PacketID); ok {
+				ch.(chan RPCMessage) <- resp
+				client.pending.Delete(resp.PacketID)
+			}
 		}
 	}
+}
+
+// Close gracefully shuts down the client and its network connection
+func (client *Client) Close() error {
+	close(client.done)
+	return client.network.Close()
 }
 
 func (client *Client) SendMessage(target Contact, msg *RPCMessage) (chan RPCMessage, error) {
@@ -66,12 +70,6 @@ func (client *Client) SendMessage(target Contact, msg *RPCMessage) (chan RPCMess
 	// Add contact information
 	msg.Payload.SourceContact = client.node.GetSelfContact()
 	msg.Payload.TargetContact = target
-
-	// Build UDP address from Contact
-	addr, err := net.ResolveUDPAddr("udp", target.Address)
-	if err != nil {
-		return nil, fmt.Errorf("failed to resolve UDP addr: %w", err)
-	}
 
 	// Create response channel for this request
 	respChan := make(chan RPCMessage, 1)
@@ -84,7 +82,7 @@ func (client *Client) SendMessage(target Contact, msg *RPCMessage) (chan RPCMess
 	}
 
 	// Send JSON bytes
-	_, err = client.conn.WriteToUDP(data, addr)
+	err = client.network.SendMessage(target.Address, data)
 	if err != nil {
 		return nil, fmt.Errorf("failed to send UDP message: %w", err)
 	}
@@ -103,11 +101,8 @@ func (client *Client) SendPingMessage(target Contact) (RPCMessage, error) {
 	// Wait for response
 	select {
 	case resp := <-respChan:
-		// Add contact
-		client.node.AddContact(resp.Payload.SourceContact)
-		fmt.Println("PING response received")
 		return resp, nil
-	case <-time.After(5 * time.Second):
+	case <-time.After(500 * time.Millisecond):
 		return RPCMessage{}, fmt.Errorf("PING Timeout")
 	}
 }
@@ -132,7 +127,6 @@ func (client *Client) SendFindNodeMessage(target *KademliaID, contact Contact) (
 		if resp.Payload.SourceContact != (Contact{}) {
 			client.node.AddContact(resp.Payload.SourceContact)
 		}
-		fmt.Println("FIND_NODE response received")
 		for _, c := range resp.Payload.Contacts {
 			client.node.AddContact(c)
 		}
@@ -171,17 +165,16 @@ func (client *Client) SendStoreMessage(data []byte) (RPCMessage, error) {
 		select {
 		case resp := <-respChan:
 			client.node.AddContact(resp.Payload.SourceContact)
-			fmt.Println("STORE response received")
+			////log.Println("STORE response received")
 			// Assume any response means successful store
 
 			storedCount++
-			fmt.Println("\nData stored on:", resp.Payload.SourceContact, '\n')
 			lastResp = resp
 			if storedCount >= k {
 				return lastResp, nil
 			}
 		case <-time.After(2 * time.Second):
-			fmt.Println("STORE Timeout for contact", contact.String())
+			log.Println("STORE Timeout for contact", contact.String())
 			// try next contact
 		}
 	}
@@ -222,7 +215,7 @@ func (client *Client) SendFindValueMessage(hash string) (RPCMessage, error) {
 
 		select {
 		case resp := <-respChan:
-			fmt.Println("FIND_VALUE response received")
+			//log.Println("FIND_VALUE response received")
 			client.node.AddContact(resp.Payload.SourceContact)
 			if resp.Payload.Data != nil {
 				// Found the data, return immediately
@@ -230,7 +223,7 @@ func (client *Client) SendFindValueMessage(hash string) (RPCMessage, error) {
 			}
 			// else, try next contact
 		case <-time.After(2 * time.Second):
-			fmt.Println("FIND_VALUE Timeout for contact", contact.String())
+			log.Println("FIND_VALUE Timeout for contact", contact.String())
 			// try next contact
 		}
 	}
