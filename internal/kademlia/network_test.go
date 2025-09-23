@@ -52,7 +52,6 @@ func Test_Kademlia_NetworkEmulation_WithPacketDrop(t *testing.T) {
 		)
 		nodes[i] = node
 		errs[i] = err
-		t.Logf("Created peer node %d as %v", i, node.Node.GetSelfContact())
 	}
 	for i, err := range errs {
 		if err != nil {
@@ -84,7 +83,6 @@ func Test_Kademlia_NetworkEmulation_WithPacketDrop(t *testing.T) {
 			nodes[i].Server.Close()
 
 			nodes[i] = nil
-			t.Logf("Node %d deleted from network", i)
 		}
 	}
 

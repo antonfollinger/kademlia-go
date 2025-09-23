@@ -1,6 +1,7 @@
 package kademlia
 
 import (
+	"encoding/json"
 	"testing"
 	"time"
 
@@ -54,16 +55,22 @@ func Test_Server_ProcessRequest_STORE(t *testing.T) {
 	server, err := InitServer(node, network)
 	assert.NoError(t, err)
 	addr := "127.0.0.1:9998"
-	rpc := RPCMessage{Type: "STORE", Payload: Payload{Key: "key", Data: []byte("value"), SourceContact: node.GetSelfContact()}}
-	in := IncomingRPC{RPC: rpc, Addr: addr}
-	go server.processRequest(in)
-	// Check outgoing channel for STORE response
+	registry.Register(addr)
+	rpc := NewRPCMessage("STORE", Payload{Key: "key", Data: []byte("value"), SourceContact: node.GetSelfContact()}, true)
+	in := IncomingRPC{RPC: *rpc, Addr: addr}
+	server.incoming <- in
+	time.Sleep(500 * time.Millisecond)
+	ch, ok := registry.Get(addr)
+	assert.True(t, ok)
 	select {
-	case out := <-server.outgoing:
-		assert.Equal(t, "STORE", out.RPC.Type)
-		assert.Equal(t, "key", out.RPC.Payload.Key)
-		assert.Equal(t, node.GetSelfContact(), out.RPC.Payload.Contacts[0])
-	case <-time.After(1500 * time.Millisecond):
+	case pkt := <-ch:
+		var outRPC RPCMessage
+		err := json.Unmarshal(pkt.data, &outRPC)
+		assert.NoError(t, err)
+		assert.Equal(t, "STORE", outRPC.Type)
+		assert.Equal(t, "key", outRPC.Payload.Key)
+		assert.Equal(t, node.GetSelfContact(), outRPC.Payload.Contacts[0])
+	case <-time.After(1 * time.Second):
 		t.Error("No STORE response received")
 	}
 }
@@ -76,16 +83,21 @@ func Test_Server_ProcessRequest_FIND_VALUE(t *testing.T) {
 	server, err := InitServer(node, network)
 	assert.NoError(t, err)
 	addr := "127.0.0.1:9997"
-	rpc := RPCMessage{Type: "FIND_VALUE", Payload: Payload{Key: "key", SourceContact: node.GetSelfContact()}}
-	in := IncomingRPC{RPC: rpc, Addr: addr}
-	go server.processRequest(in)
-	// Check outgoing channel for FIND_VALUE response
+	registry.Register(addr)
+	rpc := NewRPCMessage("FIND_VALUE", Payload{Key: "key", SourceContact: node.GetSelfContact()}, true)
+	in := IncomingRPC{RPC: *rpc, Addr: addr}
+	server.incoming <- in
+	time.Sleep(500 * time.Millisecond)
+	ch, ok := registry.Get(addr)
+	assert.True(t, ok)
 	select {
-	case out := <-server.outgoing:
-		assert.Equal(t, "FIND_VALUE", out.RPC.Type)
-		// Data is nil in mock
-		assert.Nil(t, out.RPC.Payload.Data)
-	case <-time.After(500 * time.Millisecond):
+	case pkt := <-ch:
+		var outRPC RPCMessage
+		err := json.Unmarshal(pkt.data, &outRPC)
+		assert.NoError(t, err)
+		assert.Equal(t, "FIND_VALUE", outRPC.Type)
+		assert.Nil(t, outRPC.Payload.Data)
+	case <-time.After(1 * time.Second):
 		t.Error("No FIND_VALUE response received")
 	}
 }
@@ -98,15 +110,21 @@ func Test_Server_ProcessRequest_Default_Error(t *testing.T) {
 	server, err := InitServer(node, network)
 	assert.NoError(t, err)
 	addr := "127.0.0.1:9996"
-	rpc := RPCMessage{Type: "UNKNOWN", Payload: Payload{SourceContact: node.GetSelfContact(), TargetContact: node.GetSelfContact()}}
-	in := IncomingRPC{RPC: rpc, Addr: addr}
-	go server.processRequest(in)
-	// Check outgoing channel for ERROR response
+	registry.Register(addr)
+	rpc := NewRPCMessage("UNKNOWN", Payload{SourceContact: node.GetSelfContact()}, true)
+	in := IncomingRPC{RPC: *rpc, Addr: addr}
+	server.incoming <- in
+	time.Sleep(500 * time.Millisecond)
+	ch, ok := registry.Get(addr)
+	assert.True(t, ok)
 	select {
-	case out := <-server.outgoing:
-		assert.Equal(t, "ERROR", out.RPC.Type)
-		assert.Equal(t, node.GetSelfContact(), out.RPC.Payload.TargetContact)
-	case <-time.After(1500 * time.Millisecond):
+	case pkt := <-ch:
+		var outRPC RPCMessage
+		err := json.Unmarshal(pkt.data, &outRPC)
+		assert.NoError(t, err)
+		assert.Equal(t, "ERROR", outRPC.Type)
+		assert.Equal(t, node.GetSelfContact(), outRPC.Payload.TargetContact)
+	case <-time.After(1 * time.Second):
 		t.Error("No ERROR response received")
 	}
 }

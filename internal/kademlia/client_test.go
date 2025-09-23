@@ -8,20 +8,31 @@ import (
 
 // MockNodeAPI for testing
 type MockNodeAPI struct {
-	Port string
+	Port    string
+	storage map[string][]byte
 }
 
 func (m *MockNodeAPI) GetSelfContact() Contact {
 	return Contact{ID: NewKademliaID("0000000000000000000000000000000000000001"), Address: "localhost:" + m.Port}
 }
-func (m *MockNodeAPI) AddContact(contact Contact)                     {}
-func (m *MockNodeAPI) LookupClosestContacts(target Contact) []Contact { return []Contact{} }
-func (m *MockNodeAPI) LookupData(hash string) []byte                  { return nil }
-func (m *MockNodeAPI) Store(key string, data []byte)                  {}
-
-// Add missing IterativeFindNode method to satisfy NodeAPI interface
+func (m *MockNodeAPI) AddContact(contact Contact) {}
+func (m *MockNodeAPI) LookupClosestContacts(target Contact) []Contact {
+	return []Contact{m.GetSelfContact()}
+}
+func (m *MockNodeAPI) LookupData(hash string) []byte {
+	if m.storage == nil {
+		return nil
+	}
+	return m.storage[hash]
+}
+func (m *MockNodeAPI) Store(key string, data []byte) {
+	if m.storage == nil {
+		m.storage = make(map[string][]byte)
+	}
+	m.storage[key] = data
+}
 func (m *MockNodeAPI) IterativeFindNode(target *KademliaID) ([]Contact, error) {
-	return []Contact{}, nil
+	return []Contact{m.GetSelfContact()}, nil
 }
 
 func Test_Client_SendPingMessage_Timeout(t *testing.T) {

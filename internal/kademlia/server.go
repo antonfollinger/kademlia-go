@@ -16,8 +16,8 @@ type OutgoingRPC struct {
 }
 
 const (
-	IncomingBufferSize int = 256
-	OutgoingBufferSize int = 128
+	IncomingBufferSize int = 1024
+	OutgoingBufferSize int = 1024
 	workerCount        int = 5
 )
 
