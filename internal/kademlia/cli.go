@@ -7,6 +7,7 @@ import (
 	"strings"
 )
 
+// Cli provides a simple command-line interface for the Kademlia node
 func (node *Node) Cli(in io.Reader, out io.Writer) {
 	reader := bufio.NewReader(in)
 	fmt.Fprintln(out, "Node CLI started. Commands: put <content>, get <hash>, exit")

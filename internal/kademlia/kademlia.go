@@ -58,7 +58,6 @@ func InitKademlia(port string, bootstrap bool, bootstrapIP string, opts ...Kadem
 	var clientNet Network
 	var serverNet Network
 	if cfg.isMockNetwork {
-		// Use unique addresses for client and server to avoid channel sharing
 		clientAddr := "127.0.0.1" + ":" + port + ":client"
 		clientNet = NewMockNetwork(clientAddr, cfg.MockNetworkRegistry)
 		serverNet = NewMockNetwork(ip, cfg.MockNetworkRegistry)

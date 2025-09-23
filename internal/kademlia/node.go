@@ -26,12 +26,12 @@ type NodeAPI interface {
 	Store(key string, data []byte)
 }
 
+// InitNode initializes a new Node with a given IP address and bootstrap node address if not a bootstrap node
 func InitNode(isBootstrap bool, ip string, bootstrapIP string) (*Node, error) {
 
 	var kademliaID *KademliaID
 	var me Contact
 
-	// Create routing table
 	if isBootstrap {
 		kademliaID = NewKademliaID("0000000000000000000000000000000000000000")
 	} else {
@@ -40,7 +40,6 @@ func InitNode(isBootstrap bool, ip string, bootstrapIP string) (*Node, error) {
 	me = NewContact(kademliaID, ip)
 	routingTable := NewRoutingTable(me)
 
-	// Create and add bootstrap contact if node is a peer
 	if !isBootstrap {
 		bootstrap := NewContact(NewKademliaID("0000000000000000000000000000000000000000"), bootstrapIP)
 		routingTable.AddContact(bootstrap)
@@ -55,7 +54,7 @@ func InitNode(isBootstrap bool, ip string, bootstrapIP string) (*Node, error) {
 	return node, nil
 }
 
-// JoinNetwork performs an iterative lookup on the node's own ID to populate the routing table with nearby contacts
+// JoinNetwork performs an iterative lookup on the node own ID to populate the routing table with nearby contacts
 func (node *Node) JoinNetwork() error {
 
 	selfID := node.GetSelfContact().ID
@@ -102,9 +101,10 @@ func (node *Node) GetSelfContact() (self Contact) {
 	return node.RoutingTable.me
 }
 
+// AddContact adds a contact to the routing table, handling bucket management and liveness checks as needed
+// Use mutex only on critical sections to avoid deadlocks, and not on network calls
 func (n *Node) AddContact(c Contact) {
 
-	// Should not add self
 	if c == n.GetSelfContact() {
 		return
 	}
@@ -112,18 +112,15 @@ func (n *Node) AddContact(c Contact) {
 	n.mu.Lock()
 	bucketIndex := n.RoutingTable.getBucketIndex(c.ID)
 	bucket := n.RoutingTable.buckets[bucketIndex]
-	// Calculate and set the contact's distance field before adding
 	c.distance = n.Id.CalcDistance(c.ID)
 	if bucket.Len() < bucketSize {
 		bucket.AddContact(c)
 		n.mu.Unlock()
 		return
 	}
-	// If full, copy LRU contact to ping after releasing lock
 	lru := bucket.list.Back().Value.(Contact)
 	n.mu.Unlock()
 
-	// Ping LRU outside lock
 	alive := false
 	if resp, err := n.Client.SendPingMessage(lru); err == nil && resp.Type == "PONG" {
 		alive = true
@@ -133,30 +130,29 @@ func (n *Node) AddContact(c Contact) {
 	defer n.mu.Unlock()
 
 	bucketIndex = n.RoutingTable.getBucketIndex(c.ID)
-	bucket = n.RoutingTable.buckets[bucketIndex] // re-fetch in case table changed
+	bucket = n.RoutingTable.buckets[bucketIndex]
 	if bucket.Len() < bucketSize {
 		bucket.AddContact(c)
 	} else if !alive {
-		// evict old LRU and add new contact
 		bucket.list.Remove(bucket.list.Back())
 		bucket.AddContact(c)
 	}
-	// else: keep existing LRU, drop new
 }
 
 func (node *Node) LookupClosestContacts(target Contact) []Contact {
 	return node.RoutingTable.FindClosestContacts(target.ID, alpha)
 }
 
+// IterativeFindNode performs an iterative lookup for the target ID, returning the alpha closest contacts found
+// It avoids querying the same contact multiple times and handles timeouts
 func (node *Node) IterativeFindNode(target *KademliaID) ([]Contact, error) {
 	shortlist := node.LookupClosestContacts(NewContact(target, ""))
 	if len(shortlist) == 0 {
 		return nil, nil
 	}
 	queried := make(map[string]bool)
-	inShortlist := make(map[string]bool) // Track contacts in shortlist
+	inShortlist := make(map[string]bool)
 
-	// Initialize inShortlist with initial shortlist
 	for _, c := range shortlist {
 		if c.ID == nil {
 			continue
