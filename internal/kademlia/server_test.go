@@ -10,8 +10,8 @@ import (
 func Test_Server_InitServer_Success(t *testing.T) {
 	myPort = "1234"
 	node := &MockNodeAPI{}
-	network, err := NewUDPNetwork(":" + myPort)
-	assert.NoError(t, err)
+	registry := NewMockRegistry()
+	network := NewMockNetwork("127.0.0.1:"+myPort, registry)
 	server, err := InitServer(node, network)
 	assert.NoError(t, err)
 	assert.NotNil(t, server)
@@ -22,8 +22,8 @@ func Test_Server_InitServer_Success(t *testing.T) {
 func Test_Server_Channel_Operations(t *testing.T) {
 	myPort = "4321"
 	node := &MockNodeAPI{}
-	network, err := NewUDPNetwork(":" + myPort)
-	assert.NoError(t, err)
+	registry := NewMockRegistry()
+	network := NewMockNetwork("127.0.0.1:"+myPort, registry)
 	server, err := InitServer(node, network)
 	assert.NoError(t, err)
 	// Test sending and receiving on incoming channel
@@ -49,8 +49,8 @@ func Test_Server_Channel_Operations(t *testing.T) {
 func Test_Server_ProcessRequest_STORE(t *testing.T) {
 	myPort = "4322"
 	node := &MockNodeAPI{}
-	network, err := NewUDPNetwork(":" + myPort)
-	assert.NoError(t, err)
+	registry := NewMockRegistry()
+	network := NewMockNetwork("127.0.0.1:"+myPort, registry)
 	server, err := InitServer(node, network)
 	assert.NoError(t, err)
 	addr := "127.0.0.1:9998"
@@ -71,8 +71,8 @@ func Test_Server_ProcessRequest_STORE(t *testing.T) {
 func Test_Server_ProcessRequest_FIND_VALUE(t *testing.T) {
 	myPort = "4323"
 	node := &MockNodeAPI{}
-	network, err := NewUDPNetwork(":" + myPort)
-	assert.NoError(t, err)
+	registry := NewMockRegistry()
+	network := NewMockNetwork("127.0.0.1:"+myPort, registry)
 	server, err := InitServer(node, network)
 	assert.NoError(t, err)
 	addr := "127.0.0.1:9997"
@@ -93,8 +93,8 @@ func Test_Server_ProcessRequest_FIND_VALUE(t *testing.T) {
 func Test_Server_ProcessRequest_Default_Error(t *testing.T) {
 	myPort = "4324"
 	node := &MockNodeAPI{}
-	network, err := NewUDPNetwork(":" + myPort)
-	assert.NoError(t, err)
+	registry := NewMockRegistry()
+	network := NewMockNetwork("127.0.0.1:"+myPort, registry)
 	server, err := InitServer(node, network)
 	assert.NoError(t, err)
 	addr := "127.0.0.1:9996"

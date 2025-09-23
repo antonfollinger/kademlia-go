@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-NODE_COUNT=${1:-25} # default 50
+NODE_COUNT=${1:-50} # default 50
 
 cat <<EOF > docker-compose.yml
 services:

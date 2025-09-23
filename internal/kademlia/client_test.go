@@ -25,8 +25,8 @@ func (m *MockNodeAPI) Store(key string, data []byte) {}
 func Test_Client_SendPingMessage_Timeout(t *testing.T) {
 	myPort = "20001"
 	// Use a real client but target an unreachable address
-	network, err := NewUDPNetwork(":" + myPort)
-	assert.NoError(t, err)
+	registry := NewMockRegistry()
+	network := NewMockNetwork("127.0.0.1:"+myPort, registry)
 	client, err := InitClient(&MockNodeAPI{}, network)
 	assert.NoError(t, err)
 	target := Contact{ID: NewKademliaID("0000000000000000000000000000000000000002"), Address: "127.0.0.1:65535"}
@@ -37,8 +37,8 @@ func Test_Client_SendPingMessage_Timeout(t *testing.T) {
 
 func Test_Client_SendMessage_Error(t *testing.T) {
 	myPort = "20002"
-	network, err := NewUDPNetwork(":" + myPort)
-	assert.NoError(t, err)
+	registry := NewMockRegistry()
+	network := NewMockNetwork("127.0.0.1:"+myPort, registry)
 	client, err := InitClient(&MockNodeAPI{}, network)
 	assert.NoError(t, err)
 	// Invalid address
@@ -51,8 +51,8 @@ func Test_Client_SendMessage_Error(t *testing.T) {
 
 func Test_Client_SendPingMessage_Timeout_Unreachable(t *testing.T) {
 	myPort = "20003"
-	network, err := NewUDPNetwork(":" + myPort)
-	assert.NoError(t, err)
+	registry := NewMockRegistry()
+	network := NewMockNetwork("127.0.0.1:"+myPort, registry)
 	client, err := InitClient(&MockNodeAPI{}, network)
 	assert.NoError(t, err)
 	// Unreachable port
@@ -64,8 +64,8 @@ func Test_Client_SendPingMessage_Timeout_Unreachable(t *testing.T) {
 
 func Test_Client_SendFindNodeMessage_Timeout_Unreachable(t *testing.T) {
 	myPort = "20004"
-	network, err := NewUDPNetwork(":" + myPort)
-	assert.NoError(t, err)
+	registry := NewMockRegistry()
+	network := NewMockNetwork("127.0.0.1:"+myPort, registry)
 	client, err := InitClient(&MockNodeAPI{}, network)
 	assert.NoError(t, err)
 	// Unreachable port
@@ -78,8 +78,8 @@ func Test_Client_SendFindNodeMessage_Timeout_Unreachable(t *testing.T) {
 
 func Test_Client_SendStoreMessage_Timeout_Unreachable(t *testing.T) {
 	myPort = "20005"
-	network, err := NewUDPNetwork(":" + myPort)
-	assert.NoError(t, err)
+	registry := NewMockRegistry()
+	network := NewMockNetwork("127.0.0.1:"+myPort, registry)
 	client, err := InitClient(&MockNodeAPI{}, network)
 	assert.NoError(t, err)
 	// No reachable nodes, IterativeFindNode returns empty
@@ -91,8 +91,8 @@ func Test_Client_SendStoreMessage_Timeout_Unreachable(t *testing.T) {
 
 func Test_Client_SendFindValueMessage_Timeout_Unreachable(t *testing.T) {
 	myPort = "20006"
-	network, err := NewUDPNetwork(":" + myPort)
-	assert.NoError(t, err)
+	registry := NewMockRegistry()
+	network := NewMockNetwork("127.0.0.1:"+myPort, registry)
 	client, err := InitClient(&MockNodeAPI{}, network)
 	assert.NoError(t, err)
 	// No reachable nodes, IterativeFindNode returns empty
