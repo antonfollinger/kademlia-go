@@ -103,6 +103,12 @@ func (node *Node) GetSelfContact() (self Contact) {
 }
 
 func (n *Node) AddContact(c Contact) {
+
+	// Should not add self
+	if c == n.GetSelfContact() {
+		return
+	}
+
 	n.mu.Lock()
 	bucketIndex := n.RoutingTable.getBucketIndex(c.ID)
 	bucket := n.RoutingTable.buckets[bucketIndex]

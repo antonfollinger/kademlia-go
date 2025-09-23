@@ -96,6 +96,6 @@ func Test_Kademlia_NetworkEmulation_WithPacketDrop(t *testing.T) {
 	} else if val != value {
 		t.Errorf("Bootstrap node fetched wrong value: got '%v', want '%v'", val, value)
 	} else {
-		t.Errorf("Bootstrap node successfully fetched value '%s' after deletions", val)
+		t.Logf("Bootstrap node successfully fetched value '%s' after deletions", val)
 	}
 }
