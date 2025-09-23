@@ -5,7 +5,7 @@ TARGET_DIR="./internal/kademlia"
 
 cd ..
 
-go test -v -coverprofile="$COVERAGE_FILE" "$TARGET_DIR"
+go test -v -race -coverprofile="$COVERAGE_FILE" "$TARGET_DIR"
 
 # Display coverage summary
 go tool cover -func="$COVERAGE_FILE"
