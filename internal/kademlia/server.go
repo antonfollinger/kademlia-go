@@ -119,7 +119,7 @@ func (s *Server) processRequest(in IncomingRPC) {
 			TargetContact: in.RPC.Payload.SourceContact,
 		}, false)
 	default:
-		resp = *NewRPCMessage("ERROR", Payload{TargetContact: in.RPC.Payload.TargetContact}, false)
+		resp = *NewRPCMessage("ERROR", Payload{TargetContact: in.RPC.Payload.SourceContact}, false)
 	}
 
 	// Add the requesting node

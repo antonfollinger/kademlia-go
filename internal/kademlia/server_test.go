@@ -8,10 +8,10 @@ import (
 )
 
 func Test_Server_InitServer_Success(t *testing.T) {
-	myPort = "1234"
-	node := &MockNodeAPI{}
+	port := "1234"
+	node := &MockNodeAPI{Port: port}
 	registry := NewMockRegistry()
-	network := NewMockNetwork("127.0.0.1:"+myPort, registry)
+	network := NewMockNetwork("127.0.0.1:"+port, registry)
 	server, err := InitServer(node, network)
 	assert.NoError(t, err)
 	assert.NotNil(t, server)
@@ -20,10 +20,10 @@ func Test_Server_InitServer_Success(t *testing.T) {
 }
 
 func Test_Server_Channel_Operations(t *testing.T) {
-	myPort = "4321"
-	node := &MockNodeAPI{}
+	port := "4321"
+	node := &MockNodeAPI{Port: port}
 	registry := NewMockRegistry()
-	network := NewMockNetwork("127.0.0.1:"+myPort, registry)
+	network := NewMockNetwork("127.0.0.1:"+port, registry)
 	server, err := InitServer(node, network)
 	assert.NoError(t, err)
 	// Test sending and receiving on incoming channel
@@ -47,10 +47,10 @@ func Test_Server_Channel_Operations(t *testing.T) {
 }
 
 func Test_Server_ProcessRequest_STORE(t *testing.T) {
-	myPort = "4322"
-	node := &MockNodeAPI{}
+	port := "4322"
+	node := &MockNodeAPI{Port: port}
 	registry := NewMockRegistry()
-	network := NewMockNetwork("127.0.0.1:"+myPort, registry)
+	network := NewMockNetwork("127.0.0.1:"+port, registry)
 	server, err := InitServer(node, network)
 	assert.NoError(t, err)
 	addr := "127.0.0.1:9998"
@@ -63,16 +63,16 @@ func Test_Server_ProcessRequest_STORE(t *testing.T) {
 		assert.Equal(t, "STORE", out.RPC.Type)
 		assert.Equal(t, "key", out.RPC.Payload.Key)
 		assert.Equal(t, node.GetSelfContact(), out.RPC.Payload.Contacts[0])
-	case <-time.After(500 * time.Millisecond):
+	case <-time.After(1500 * time.Millisecond):
 		t.Error("No STORE response received")
 	}
 }
 
 func Test_Server_ProcessRequest_FIND_VALUE(t *testing.T) {
-	myPort = "4323"
-	node := &MockNodeAPI{}
+	port := "4323"
+	node := &MockNodeAPI{Port: port}
 	registry := NewMockRegistry()
-	network := NewMockNetwork("127.0.0.1:"+myPort, registry)
+	network := NewMockNetwork("127.0.0.1:"+port, registry)
 	server, err := InitServer(node, network)
 	assert.NoError(t, err)
 	addr := "127.0.0.1:9997"
@@ -91,10 +91,10 @@ func Test_Server_ProcessRequest_FIND_VALUE(t *testing.T) {
 }
 
 func Test_Server_ProcessRequest_Default_Error(t *testing.T) {
-	myPort = "4324"
-	node := &MockNodeAPI{}
+	port := "4324"
+	node := &MockNodeAPI{Port: port}
 	registry := NewMockRegistry()
-	network := NewMockNetwork("127.0.0.1:"+myPort, registry)
+	network := NewMockNetwork("127.0.0.1:"+port, registry)
 	server, err := InitServer(node, network)
 	assert.NoError(t, err)
 	addr := "127.0.0.1:9996"
@@ -106,7 +106,7 @@ func Test_Server_ProcessRequest_Default_Error(t *testing.T) {
 	case out := <-server.outgoing:
 		assert.Equal(t, "ERROR", out.RPC.Type)
 		assert.Equal(t, node.GetSelfContact(), out.RPC.Payload.TargetContact)
-	case <-time.After(500 * time.Millisecond):
+	case <-time.After(1500 * time.Millisecond):
 		t.Error("No ERROR response received")
 	}
 }

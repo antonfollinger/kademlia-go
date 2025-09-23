@@ -14,7 +14,7 @@ type Node struct {
 	RoutingTable *RoutingTable
 	Storage      map[string][]byte
 	Client       ClientAPI
-	mu           sync.Mutex
+	mu           sync.RWMutex
 }
 
 type NodeAPI interface {
@@ -98,6 +98,8 @@ func (node *Node) SetClient(client ClientAPI) {
 }
 
 func (node *Node) GetSelfContact() (self Contact) {
+	node.mu.Lock()
+	defer node.mu.Unlock()
 	return node.RoutingTable.me
 }
 
@@ -229,6 +231,8 @@ func (node *Node) IterativeFindNode(target *KademliaID) ([]Contact, error) {
 }
 
 func (node *Node) LookupData(hash string) []byte {
+	node.mu.Lock()
+	defer node.mu.Unlock()
 	data, ok := node.Storage[hash]
 	if !ok {
 		return nil
