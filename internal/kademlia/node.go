@@ -98,8 +98,6 @@ func (node *Node) SetClient(client ClientAPI) {
 }
 
 func (node *Node) GetSelfContact() (self Contact) {
-	node.mu.Lock()
-	defer node.mu.Unlock()
 	return node.RoutingTable.me
 }
 
@@ -231,8 +229,8 @@ func (node *Node) IterativeFindNode(target *KademliaID) ([]Contact, error) {
 }
 
 func (node *Node) LookupData(hash string) []byte {
-	node.mu.Lock()
-	defer node.mu.Unlock()
+	node.mu.RLock()
+	defer node.mu.RUnlock()
 	data, ok := node.Storage[hash]
 	if !ok {
 		return nil
